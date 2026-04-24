@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="秘密小屋">
+    <title>小老母猪の秘密小屋</title>
+    <style>
+        body { font-family: 'PingFang SC', sans-serif; background-color: #fff0f5; margin: 0; padding: 20px; color: #555; text-align: center; }
+        h1 { color: #ff7675; font-size: 24px; margin-bottom: 25px;}
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255, 118, 117, 0.1); }
+        button { background-color: #ff7675; color: white; border: none; padding: 12px 24px; border-radius: 30px; font-size: 16px; font-weight: bold; width: 80%; margin-top: 10px; cursor: pointer;}
+        button:active { background-color: #d63031; transform: scale(0.98); }
+        .mood-btn { background-color: #ffeaa7; color: #d63031; width: auto; padding: 10px 15px; margin: 5px; font-size: 14px;}
+        .result-text { font-size: 22px; font-weight: bold; color: #d63031; margin-top: 15px; min-height: 30px; }
+        .quote { font-size: 14px; color: #636e72; font-style: italic; margin-top: 10px;}
+    </style>
+</head>
+<body>
+
+    <h1>🐷 小老母猪の秘密小屋 🐷</h1>
+
+    <div class="card">
+        <div style="font-size: 14px; color: #b2bec3;">今日天气与运势</div>
+        <div id="weatherDisplay" style="font-size: 18px; margin: 15px 0;">读取中...</div>
+        <button onclick="updateWeather()" style="width: auto; padding: 8px 16px; font-size: 14px;">刷新天气</button>
+    </div>
+
+    <div class="card">
+        <h2>今天吃什么？</h2>
+        <button onclick="pickFood()">抽取美食</button>
+        <div id="foodDisplay" class="result-text"></div>
+    </div>
+
+    <div class="card">
+        <div style="margin-bottom: 10px;">今天心情怎么样？</div>
+        <button class="mood-btn" onclick="setMood('超开心！保持住！')">超开心</button>
+        <button class="mood-btn" onclick="setMood('平平淡淡才是真~')">一般般</button>
+        <button class="mood-btn" onclick="setMood('抱抱你，好好休息一下吧')">好累哦</button>
+        <div id="moodDisplay" style="margin-top: 15px; color: #fdcb6e; font-weight: bold;"></div>
+    </div>
+
+    <div class="quote" id="quoteDisplay"></div>
+
+    <script>
+        // 你可以在这里随时修改你的数据源
+        const weathers = ['☀️ 晴朗，适合出去撒欢', '☁️ 多云，微风不燥', '🌧️ 下雨啦，适合在家睡大觉'];
+        const foods = ['麻辣火锅', '滋滋烤肉', '快乐臭臭螺蛳粉', '健康轻食沙拉', '街头麻辣烫', '罪恶炸鸡汉堡', '东北大乱炖', '今天喝西北风'];
+        const quotes = ['今天也要元气满满哦！', '吃饱了才有力气减肥！', '做一只无忧无虑的快乐小猪！', '没有什么是一顿火锅解决不了的！'];
+
+        function getRandomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function updateWeather() {
+            document.getElementById('weatherDisplay').innerText = getRandomItem(weathers);
+        }
+
+        function pickFood() {
+            const display = document.getElementById('foodDisplay');
+            display.innerText = "抽取中...";
+            setTimeout(() => {
+                display.innerText = "✨ " + getRandomItem(foods) + " ✨";
+            }, 300); // 加一点点延迟产生盲盒感
+        }
+
+        function setMood(msg) {
+            document.getElementById('moodDisplay').innerText = msg;
+        }
+
+        // 页面加载时自动执行
+        window.onload = function() {
+            updateWeather();
+            document.getElementById('quoteDisplay').innerText = getRandomItem(quotes);
+        }
+    </script>
+</body>
+</html>
