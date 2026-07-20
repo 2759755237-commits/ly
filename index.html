@@ -1,1759 +1,1558 @@
-from pathlib import Path
-
-html = r'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="星轨人格 Orbit-16：一个原创、有趣、可分享的四维人格测试。" />
-  <title>星轨人格 Orbit-16</title>
-  <style>
-    :root {
-      --bg: #070b18;
-      --panel: rgba(14, 20, 42, 0.78);
-      --panel-strong: rgba(18, 26, 56, 0.96);
-      --text: #f4f6ff;
-      --muted: #a8b0cd;
-      --line: rgba(255,255,255,.10);
-      --purple: #8b5cf6;
-      --cyan: #22d3ee;
-      --pink: #fb7185;
-      --yellow: #facc15;
-      --green: #34d399;
-      --shadow: 0 24px 80px rgba(0,0,0,.42);
-      --radius: 26px;
-    }
-
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      color: var(--text);
-      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(circle at 15% 20%, rgba(139,92,246,.22), transparent 28%),
-        radial-gradient(circle at 85% 10%, rgba(34,211,238,.15), transparent 24%),
-        radial-gradient(circle at 72% 80%, rgba(251,113,133,.13), transparent 26%),
-        linear-gradient(135deg, #050713 0%, #0b1023 48%, #080b17 100%);
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .42;
-      background-image:
-        radial-gradient(circle at 20% 30%, #fff 0 1px, transparent 1.5px),
-        radial-gradient(circle at 80% 40%, #fff 0 1px, transparent 1.5px),
-        radial-gradient(circle at 50% 70%, #fff 0 1px, transparent 1.5px),
-        radial-gradient(circle at 65% 20%, #fff 0 1px, transparent 1.5px);
-      background-size: 180px 180px, 230px 230px, 280px 280px, 330px 330px;
-      animation: drift 24s linear infinite;
-    }
-
-    @keyframes drift {
-      from { transform: translateY(0); }
-      to { transform: translateY(-90px); }
-    }
-
-    button, input { font: inherit; }
-
-    button {
-      border: 0;
-      cursor: pointer;
-    }
-
-    .app {
-      width: min(1120px, calc(100% - 28px));
-      margin: 0 auto;
-      padding: 26px 0 64px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 30px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 900;
-      letter-spacing: .04em;
-    }
-
-    .brand-mark {
-      width: 44px;
-      height: 44px;
-      display: grid;
-      place-items: center;
-      border-radius: 15px;
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      box-shadow: 0 10px 30px rgba(139,92,246,.35);
-      font-size: 22px;
-    }
-
-    .brand small {
-      display: block;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 12px;
-      margin-top: 2px;
-      letter-spacing: .08em;
-    }
-
-    .ghost-btn {
-      padding: 11px 16px;
-      border-radius: 999px;
-      color: var(--text);
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--line);
-      transition: .2s ease;
-    }
-
-    .ghost-btn:hover {
-      transform: translateY(-2px);
-      background: rgba(255,255,255,.10);
-    }
-
-    .screen { display: none; }
-    .screen.active { display: block; animation: fadeUp .5s ease both; }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .glass {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-radius: var(--radius);
-    }
-
-    .hero {
-      padding: clamp(28px, 5vw, 68px);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      width: 390px;
-      height: 390px;
-      right: -110px;
-      top: -140px;
-      border-radius: 50%;
-      background: conic-gradient(from 20deg, var(--purple), var(--cyan), var(--pink), var(--purple));
-      filter: blur(14px);
-      opacity: .22;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      color: #dfe6ff;
-      background: rgba(255,255,255,.07);
-      border: 1px solid var(--line);
-      font-size: 13px;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      max-width: 760px;
-      font-size: clamp(44px, 8vw, 88px);
-      line-height: .98;
-      margin: 0;
-      letter-spacing: -.055em;
-    }
-
-    .gradient-text {
-      background: linear-gradient(90deg, #c4b5fd 0%, #67e8f9 42%, #fda4af 82%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .hero p {
-      max-width: 720px;
-      color: var(--muted);
-      font-size: clamp(16px, 2vw, 20px);
-      line-height: 1.85;
-      margin: 24px 0 0;
-    }
-
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-top: 34px;
-    }
-
-    .primary-btn {
-      min-width: 180px;
-      padding: 16px 24px;
-      border-radius: 16px;
-      color: white;
-      font-weight: 900;
-      background: linear-gradient(135deg, var(--purple), #6d5dfc 48%, var(--cyan));
-      box-shadow: 0 16px 34px rgba(109,93,252,.34);
-      transition: .22s ease;
-    }
-
-    .primary-btn:hover { transform: translateY(-3px) scale(1.01); }
-    .primary-btn:active { transform: translateY(0) scale(.99); }
-
-    .secondary-btn {
-      padding: 16px 22px;
-      border-radius: 16px;
-      color: var(--text);
-      font-weight: 800;
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--line);
-      transition: .2s ease;
-    }
-
-    .secondary-btn:hover { background: rgba(255,255,255,.11); }
-
-    .stats {
-      margin-top: 34px;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .stat {
-      padding: 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.045);
-      border: 1px solid var(--line);
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 22px;
-      margin-bottom: 4px;
-    }
-
-    .stat span { color: var(--muted); font-size: 13px; }
-
-    .axis-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-top: 18px;
-    }
-
-    .axis-card {
-      padding: 20px;
-      min-height: 170px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .axis-card::before {
-      content: "";
-      position: absolute;
-      inset: auto -30px -60px auto;
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: var(--axis-color);
-      opacity: .12;
-      filter: blur(4px);
-    }
-
-    .axis-card .icon {
-      font-size: 28px;
-      margin-bottom: 18px;
-    }
-
-    .axis-card h3 {
-      margin: 0 0 8px;
-      font-size: 17px;
-    }
-
-    .axis-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
-    .section-title {
-      margin: 38px 0 16px;
-      font-size: 26px;
-    }
-
-    .notice {
-      padding: 18px 20px;
-      color: var(--muted);
-      line-height: 1.75;
-      font-size: 14px;
-    }
-
-    /* Test */
-    .test-shell {
-      max-width: 860px;
-      margin: 0 auto;
-    }
-
-    .progress-wrap {
-      padding: 20px 22px;
-      margin-bottom: 18px;
-    }
-
-    .progress-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-
-    .progress-track {
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      width: 0;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--purple), var(--cyan), var(--pink));
-      transition: width .35s ease;
-    }
-
-    .question-card {
-      padding: clamp(24px, 5vw, 46px);
-      min-height: 520px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .question-kicker {
-      color: #c4b5fd;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-    }
-
-    .question-text {
-      font-size: clamp(26px, 4vw, 38px);
-      line-height: 1.38;
-      margin: 14px 0 28px;
-      letter-spacing: -.02em;
-    }
-
-    .options {
-      display: grid;
-      gap: 12px;
-    }
-
-    .option {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 16px 18px;
-      text-align: left;
-      color: var(--text);
-      border-radius: 16px;
-      background: rgba(255,255,255,.045);
-      border: 1px solid var(--line);
-      transition: .18s ease;
-    }
-
-    .option:hover {
-      transform: translateX(4px);
-      background: rgba(255,255,255,.085);
-      border-color: rgba(139,92,246,.48);
-    }
-
-    .option.selected {
-      background: linear-gradient(135deg, rgba(139,92,246,.24), rgba(34,211,238,.14));
-      border-color: rgba(103,232,249,.65);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
-    }
-
-    .option-key {
-      width: 32px;
-      height: 32px;
-      flex: 0 0 32px;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      background: rgba(255,255,255,.08);
-      color: #dfe6ff;
-      font-weight: 900;
-      font-size: 13px;
-    }
-
-    .option.selected .option-key {
-      background: linear-gradient(135deg, var(--purple), var(--cyan));
-      color: #fff;
-    }
-
-    .test-nav {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: auto;
-      padding-top: 30px;
-    }
-
-    .nav-btn {
-      padding: 13px 18px;
-      border-radius: 14px;
-      color: var(--text);
-      font-weight: 800;
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--line);
-    }
-
-    .nav-btn:disabled {
-      opacity: .35;
-      cursor: not-allowed;
-    }
-
-    .save-tip {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 14px;
-    }
-
-    /* Loading */
-    .loading-card {
-      max-width: 760px;
-      margin: 70px auto;
-      padding: 54px 28px;
-      text-align: center;
-    }
-
-    .orbit-loader {
-      width: 110px;
-      height: 110px;
-      border: 1px solid rgba(255,255,255,.18);
-      border-radius: 50%;
-      margin: 0 auto 28px;
-      position: relative;
-      animation: spin 2.4s linear infinite;
-    }
-
-    .orbit-loader::before,
-    .orbit-loader::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-    }
-
-    .orbit-loader::before {
-      width: 20px;
-      height: 20px;
-      background: var(--cyan);
-      top: 6px;
-      left: 44px;
-      box-shadow: 0 0 28px rgba(34,211,238,.8);
-    }
-
-    .orbit-loader::after {
-      width: 34px;
-      height: 34px;
-      background: linear-gradient(135deg, var(--purple), var(--pink));
-      inset: 37px;
-      box-shadow: 0 0 34px rgba(139,92,246,.65);
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loading-card h2 { font-size: 30px; margin: 0 0 12px; }
-    .loading-card p { color: var(--muted); margin: 0; min-height: 28px; }
-
-    /* Result */
-    .result-grid {
-      display: grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 18px;
-    }
-
-    .result-main,
-    .result-side,
-    .result-section {
-      padding: clamp(24px, 4vw, 40px);
-    }
-
-    .type-code {
-      display: inline-flex;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .code-char {
-      width: 52px;
-      height: 52px;
-      display: grid;
-      place-items: center;
-      border-radius: 16px;
-      font-size: 22px;
-      font-weight: 950;
-      background: linear-gradient(135deg, rgba(139,92,246,.9), rgba(34,211,238,.82));
-      box-shadow: 0 12px 28px rgba(139,92,246,.26);
-    }
-
-    .result-main h2 {
-      font-size: clamp(34px, 5vw, 58px);
-      margin: 0;
-      line-height: 1.06;
-      letter-spacing: -.045em;
-    }
-
-    .subtitle {
-      color: #d8def8;
-      font-size: 18px;
-      margin: 14px 0 20px;
-    }
-
-    .summary {
-      color: var(--muted);
-      line-height: 1.9;
-      font-size: 16px;
-      margin: 0;
-    }
-
-    .keywords {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 24px;
-    }
-
-    .keyword {
-      padding: 9px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.07);
-      border: 1px solid var(--line);
-      color: #e7eafd;
-      font-size: 13px;
-    }
-
-    .egg {
-      margin-top: 24px;
-      padding: 16px;
-      border-radius: 18px;
-      border: 1px solid rgba(250,204,21,.32);
-      background: linear-gradient(135deg, rgba(250,204,21,.12), rgba(251,113,133,.08));
-    }
-
-    .egg strong { display: block; margin-bottom: 6px; }
-    .egg p { color: #ddd6b8; margin: 0; line-height: 1.6; font-size: 14px; }
-
-    .radar-wrap {
-      display: grid;
-      place-items: center;
-      min-height: 260px;
-    }
-
-    #radarCanvas { max-width: 100%; height: auto; }
-
-    .dimension-list { display: grid; gap: 18px; }
-
-    .dimension-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .dimension-head span:last-child { color: #c4b5fd; font-weight: 800; }
-
-    .dimension-track {
-      height: 11px;
-      background: rgba(255,255,255,.08);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .dimension-bar {
-      height: 100%;
-      width: 50%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--purple), var(--cyan));
-      transition: width .8s ease;
-    }
-
-    .dimension-poles {
-      display: flex;
-      justify-content: space-between;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 7px;
-    }
-
-    .result-section {
-      margin-top: 18px;
-    }
-
-    .result-section h3 {
-      margin: 0 0 18px;
-      font-size: 23px;
-    }
-
-    .cards-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
-
-    .mini-card {
-      padding: 18px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.045);
-      border: 1px solid var(--line);
-    }
-
-    .mini-card .mini-icon { font-size: 26px; margin-bottom: 12px; }
-    .mini-card h4 { margin: 0 0 8px; font-size: 16px; }
-    .mini-card p { margin: 0; color: var(--muted); line-height: 1.7; font-size: 14px; }
-
-    .list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .list-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 15px 16px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.045);
-      border: 1px solid var(--line);
-      color: #dde2f7;
-      line-height: 1.65;
-    }
-
-    .list-item b {
-      width: 26px;
-      height: 26px;
-      flex: 0 0 26px;
-      display: grid;
-      place-items: center;
-      border-radius: 9px;
-      background: rgba(139,92,246,.25);
-      color: #ddd6fe;
-    }
-
-    .result-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 28px;
-      line-height: 1.7;
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 28px;
-      transform: translate(-50%, 20px);
-      padding: 12px 18px;
-      border-radius: 999px;
-      background: rgba(13,18,38,.96);
-      border: 1px solid var(--line);
-      color: white;
-      opacity: 0;
-      pointer-events: none;
-      transition: .25s ease;
-      z-index: 50;
-      box-shadow: var(--shadow);
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-
-    @media (max-width: 880px) {
-      .axis-grid { grid-template-columns: repeat(2, 1fr); }
-      .result-grid { grid-template-columns: 1fr; }
-      .cards-3 { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 620px) {
-      .app { width: min(100% - 18px, 1120px); padding-top: 14px; }
-      .topbar { margin-bottom: 18px; }
-      .brand small { display: none; }
-      .hero { border-radius: 22px; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .axis-grid { grid-template-columns: 1fr; }
-      .question-card { min-height: 610px; padding: 24px 18px; }
-      .question-text { font-size: 26px; }
-      .option { padding: 14px 13px; }
-      .code-char { width: 46px; height: 46px; border-radius: 14px; }
-      .result-main, .result-side, .result-section { padding: 22px 18px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily-16 互联网人设测试 · 有梗版</title>
+<style>
+:root {
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --text:#25324b;
+  --sub:#6d7890;
+  --line:#e8ecf4;
+  --primary:#7a6ff0;
+  --primary-2:#5d7df5;
+  --soft:#eef1ff;
+  --shadow:0 12px 40px rgba(30,42,79,.08);
+  --radius:24px;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei",Inter,system-ui,sans-serif;
+}
+button { font:inherit; cursor:pointer; border:none; }
+.container {
+  width:min(1080px, calc(100% - 24px));
+  margin:0 auto;
+}
+.header {
+  padding:20px 0;
+}
+.brand {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.brand-logo {
+  display:flex; align-items:center; gap:12px; font-weight:800; font-size:20px;
+}
+.logo-dot {
+  width:40px; height:40px; border-radius:14px; background:#fff; box-shadow:var(--shadow);
+  display:grid; place-items:center; color:var(--primary);
+}
+.brand-sub { display:block; font-size:12px; color:var(--sub); font-weight:600; margin-top:2px; }
+.text-btn {
+  background:none; color:var(--sub); padding:8px 6px; font-weight:700;
+}
+.screen { display:none; padding-bottom:48px; }
+.screen.active { display:block; }
+.card {
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.hero {
+  padding:52px clamp(24px,4vw,54px);
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:28px;
+  align-items:center;
+}
+.hero h1 {
+  margin:0;
+  font-size:clamp(34px,5vw,58px);
+  line-height:1.1;
+  letter-spacing:-.03em;
+}
+.hero p {
+  color:var(--sub);
+  line-height:1.9;
+  font-size:16px;
+  margin:18px 0 0;
+}
+.hero-tags { display:flex; flex-wrap:wrap; gap:10px; margin-top:26px; }
+.tag {
+  background:var(--soft); color:#51607c; padding:10px 14px; border-radius:999px; font-size:13px; font-weight:700;
+}
+.primary {
+  background:var(--primary); color:#fff; padding:16px 24px; border-radius:16px; font-weight:800;
+}
+.secondary {
+  background:#fff; color:var(--text); border:1px solid var(--line); padding:16px 22px; border-radius:16px; font-weight:800;
+}
+.hero-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; }
+.hero-illus {
+  min-height:320px; border-radius:24px; background:linear-gradient(180deg, #f7f1ff 0%, #eef4ff 100%);
+  padding:24px; display:flex; align-items:center; justify-content:center;
+}
+.small-grid {
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.small-card { padding:18px; text-align:center; }
+.small-card strong { display:block; font-size:24px; margin-bottom:6px; }
+.small-card span { color:var(--sub); font-size:13px; }
+.section-title {
+  margin:32px 0 14px;
+  font-size:22px;
+}
+.axis-list {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.axis-card { padding:20px; }
+.axis-card strong { display:block; margin-bottom:8px; font-size:16px; }
+.axis-card p { margin:0; color:var(--sub); line-height:1.7; font-size:14px; }
+
+.test-wrap { max-width:760px; margin:0 auto; }
+.progress-card { padding:18px 20px; margin-bottom:14px; }
+.progress-meta { display:flex; justify-content:space-between; color:var(--sub); font-size:14px; margin-bottom:10px; }
+.progress { height:8px; background:#edf1f7; border-radius:999px; overflow:hidden; }
+.progress > div { height:100%; width:0; background:linear-gradient(90deg,var(--primary),var(--primary-2)); border-radius:inherit; transition:.25s ease; }
+.question-card { padding:32px; }
+.kicker { color:var(--primary); font-size:13px; font-weight:800; margin-bottom:14px; }
+.question {
+  font-size:clamp(24px,4vw,34px);
+  line-height:1.45;
+  margin:0 0 24px;
+}
+.options { display:grid; gap:10px; }
+.option {
+  text-align:left; width:100%; padding:16px 18px; border-radius:16px; background:#fff; color:var(--text); border:1px solid var(--line);
+  display:flex; gap:14px; align-items:flex-start; transition:.15s ease;
+}
+.option:hover { border-color:#cfd6f6; background:#fafbff; }
+.option.selected { border-color:var(--primary); background:#f5f4ff; }
+.option-key {
+  width:28px; height:28px; border-radius:10px; background:#eef1ff; color:var(--primary); display:grid; place-items:center; font-weight:800; flex:0 0 28px;
+}
+.option.selected .option-key { background:var(--primary); color:#fff; }
+.nav { display:flex; justify-content:space-between; gap:12px; margin-top:24px; }
+.nav button { padding:14px 20px; border-radius:14px; font-weight:800; }
+.nav .ghost { background:#fff; border:1px solid var(--line); color:var(--text); }
+.nav .ghost:disabled { opacity:.45; cursor:not-allowed; }
+.tip { margin-top:12px; text-align:center; color:var(--sub); font-size:12px; }
+
+.loading-card {
+  max-width:640px; margin:64px auto 0; padding:44px 28px; text-align:center;
+}
+.loader {
+  width:72px; height:72px; margin:0 auto 20px; border-radius:50%;
+  border:5px solid #eceffd; border-top-color:var(--primary); animation:spin 1s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-card h2 { margin:0 0 10px; font-size:28px; }
+.loading-card p { color:var(--sub); margin:0; }
+
+.result-top {
+  display:grid; grid-template-columns:380px 1fr; gap:16px;
+}
+.illus-card {
+  padding:22px; display:flex; flex-direction:column; gap:16px;
+}
+.illus-box {
+  min-height:380px; border-radius:22px; overflow:hidden; background:#f7f8fc; display:flex; align-items:center; justify-content:center;
+}
+.code {
+  display:flex; gap:8px; flex-wrap:wrap;
+}
+.code span {
+  width:42px; height:42px; border-radius:14px; display:grid; place-items:center; background:#f2f4fb; color:var(--text); font-weight:900;
+}
+.info-card { padding:28px; }
+.info-card h2 { margin:0; font-size:clamp(30px,4vw,48px); line-height:1.12; letter-spacing:-.03em; }
+.info-card .sub { margin:12px 0 16px; color:var(--primary); font-weight:800; }
+.info-card .summary { margin:0; color:var(--sub); line-height:1.9; font-size:16px; }
+.keyword-wrap { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+.keyword { background:var(--soft); color:#596684; border-radius:999px; padding:8px 12px; font-size:13px; font-weight:700; }
+.hidden {
+  margin-top:18px; padding:16px 18px; border-radius:18px; background:#fff7e9; color:#6d5a1e; border:1px solid #f5df99;
+}
+.traits, .section-card { margin-top:16px; padding:24px; }
+.trait-row { margin-bottom:18px; }
+.trait-head { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; font-size:14px; }
+.trait-head span:last-child { color:var(--primary); font-weight:800; }
+.bar { height:10px; background:#edf1f7; border-radius:999px; overflow:hidden; }
+.bar > div { height:100%; background:linear-gradient(90deg,var(--primary),var(--primary-2)); border-radius:inherit; }
+.poles { display:flex; justify-content:space-between; margin-top:6px; color:var(--sub); font-size:12px; }
+.trait-row:last-child { margin-bottom:0; }
+
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+.mini { padding:22px; }
+.mini h3 { margin:0 0 10px; font-size:18px; }
+.mini p { margin:0; color:var(--sub); line-height:1.85; }
+.list { display:grid; gap:10px; margin-top:12px; }
+.list-item {
+  display:flex; gap:12px; align-items:flex-start; padding:14px 16px; background:#fafbfe; border:1px solid var(--line); border-radius:16px;
+}
+.list-item b {
+  width:24px; height:24px; border-radius:8px; background:#eef1ff; color:var(--primary); display:grid; place-items:center; flex:0 0 24px;
+}
+.actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+
+.toast {
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(12px);
+  background:#263248; color:#fff; padding:12px 18px; border-radius:999px; opacity:0; pointer-events:none; transition:.2s ease;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+footer {
+  text-align:center; color:var(--sub); font-size:12px; line-height:1.8; margin-top:24px;
+}
+
+@media (max-width: 920px) {
+  .hero, .result-top, .axis-list, .small-grid, .two-col { grid-template-columns:1fr; }
+  .hero-illus { min-height:260px; }
+  .illus-box { min-height:320px; }
+}
+@media (max-width: 640px) {
+  .container { width:min(100% - 16px, 1080px); }
+  .header { padding:14px 0; }
+  .hero, .question-card, .info-card, .traits, .section-card, .mini, .illus-card { padding:20px; }
+  .question { font-size:26px; }
+}
+</style>
 </head>
-
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">✦</div>
-        <div>
-          星轨人格 Orbit-16
-          <small>ORIGINAL PERSONALITY SPECTRUM</small>
-        </div>
+<div class="container">
+  <header class="header">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-dot">🙂</div>
+        <div>人类日常模式 Daily-16<span class="brand-sub">网络热梗版 · 原创生活人格测试</span></div>
       </div>
-      <button class="ghost-btn" id="topRestartBtn" type="button">重新校准</button>
-    </header>
+      <button class="text-btn" id="restartTopBtn">重新开始</button>
+    </div>
+  </header>
 
-    <!-- 首页 -->
-    <section class="screen active" id="homeScreen">
-      <div class="hero glass">
-        <span class="badge">🪐 原创四维人格体系 · 不复制 MBTI / SBTI</span>
-        <h1>你的性格，不是标签，<br><span class="gradient-text">是一条正在发光的轨道。</span></h1>
+  <section class="screen active" id="homeScreen">
+    <div class="card hero">
+      <div>
+        <h1>测测你在互联网世界里，<br>到底是哪种 <span style="color:var(--primary)">抽象人设</span></h1>
         <p>
-          32 个生活化情境，测出你的能量场、行动节奏、观察镜头和内在罗盘。
-          最终生成 16 种原创星轨人格，并可能解锁一个只属于你的隐藏彩蛋。
+          这是一个更有梗、更适合截图发朋友圈的版本。我们不跟你讲空话，
+          就从群聊、社交、电量、拖延、脑补、情绪价值这些日常名场面里，
+          看看你到底是显眼包、潜水仙人，还是脑内开会型终身会员。
         </p>
-
+        <div class="hero-tags">
+          <span class="tag">32 道互联网生活题</span>
+          <span class="tag">16 种原创人格</span>
+          <span class="tag">全员热梗命名</span>
+          <span class="tag">每种人格都有人设图</span>
+        </div>
         <div class="hero-actions">
-          <button class="primary-btn" id="startBtn" type="button">开始进入轨道 →</button>
-          <button class="secondary-btn" id="resumeBtn" type="button" style="display:none;">继续上次测试</button>
-        </div>
-
-        <div class="stats">
-          <div class="stat"><strong>32</strong><span>道情境题</span></div>
-          <div class="stat"><strong>4D</strong><span>原创维度</span></div>
-          <div class="stat"><strong>16</strong><span>种星轨人格</span></div>
-          <div class="stat"><strong>5–8</strong><span>分钟完成</span></div>
+          <button class="primary" id="startBtn">开始测我的抽象人设</button>
+          <button class="secondary" id="resumeBtn" style="display:none;">继续上次的人设进度</button>
         </div>
       </div>
+      <div class="hero-illus" id="homeIllus"></div>
+    </div>
 
-      <h2 class="section-title">四条星轨，决定你如何穿过世界</h2>
-      <div class="axis-grid">
-        <article class="axis-card glass" style="--axis-color:#8b5cf6">
-          <div class="icon">☀️ / 🌙</div>
-          <h3>能量场：光 L ↔ 潜 D</h3>
-          <p>你更容易在人群中点亮自己，还是在独处中重新蓄满电量？</p>
-        </article>
-        <article class="axis-card glass" style="--axis-color:#22d3ee">
-          <div class="icon">⚡ / 🧱</div>
-          <h3>行动节奏：跃 J ↔ 筑 B</h3>
-          <p>你喜欢先跳进去边走边看，还是搭好结构之后稳稳推进？</p>
-        </article>
-        <article class="axis-card glass" style="--axis-color:#fb7185">
-          <div class="icon">🔭 / 🧭</div>
-          <h3>观察镜头：幻 A ↔ 迹 T</h3>
-          <p>你先看见未来的可能性，还是先抓住眼前可验证的线索？</p>
-        </article>
-        <article class="axis-card glass" style="--axis-color:#facc15">
-          <div class="icon">💞 / ⚖️</div>
-          <h3>内在罗盘：共 C ↔ 衡 R</h3>
-          <p>你做决定时更在意人的感受，还是系统的逻辑与一致性？</p>
-        </article>
-      </div>
+    <div class="small-grid">
+      <div class="card small-card"><strong>32</strong><span>道真实题目</span></div>
+      <div class="card small-card"><strong>4</strong><span>个生活维度</span></div>
+      <div class="card small-card"><strong>16</strong><span>种结果人格</span></div>
+      <div class="card small-card"><strong>5-8</strong><span>分钟做完</span></div>
+    </div>
 
-      <div class="notice glass" style="margin-top:18px;">
-        <strong style="color:#fff;">说明：</strong>
-        本测试用于娱乐、自我观察和交流，不属于心理诊断工具，也不应用于医疗、招聘、升学或其他高风险判断。
-      </div>
-    </section>
-
-    <!-- 答题页 -->
-    <section class="screen" id="testScreen">
-      <div class="test-shell">
-        <div class="progress-wrap glass">
-          <div class="progress-meta">
-            <span id="progressText">第 1 / 32 题</span>
-            <span id="progressPercent">0%</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-        </div>
-
-        <article class="question-card glass">
-          <div class="question-kicker" id="questionKicker">轨道校准 01</div>
-          <h2 class="question-text" id="questionText"></h2>
-          <div class="options" id="optionsContainer"></div>
-
-          <div class="test-nav">
-            <button class="nav-btn" id="prevBtn" type="button">← 上一题</button>
-            <button class="primary-btn" id="nextBtn" type="button" disabled>下一题 →</button>
-          </div>
-          <div class="save-tip">答案会自动保存在当前浏览器中 · 也可以按数字键 1–5 快速作答</div>
-        </article>
-      </div>
-    </section>
-
-    <!-- 计算页 -->
-    <section class="screen" id="loadingScreen">
-      <div class="loading-card glass">
-        <div class="orbit-loader"></div>
-        <h2>正在绘制你的星轨</h2>
-        <p id="loadingText">读取你的社交电量……</p>
-      </div>
-    </section>
-
-    <!-- 结果页 -->
-    <section class="screen" id="resultScreen">
-      <div class="result-grid">
-        <article class="result-main glass">
-          <div class="type-code" id="typeCode"></div>
-          <h2 id="typeName"></h2>
-          <div class="subtitle" id="typeSubtitle"></div>
-          <p class="summary" id="typeSummary"></p>
-          <div class="keywords" id="keywords"></div>
-          <div class="egg" id="eggBox">
-            <strong id="eggTitle"></strong>
-            <p id="eggText"></p>
-          </div>
-        </article>
-
-        <aside class="result-side glass">
-          <div class="radar-wrap">
-            <canvas id="radarCanvas" width="360" height="300" aria-label="人格雷达图"></canvas>
-          </div>
-          <div class="dimension-list" id="dimensionList"></div>
-        </aside>
-      </div>
-
-      <section class="result-section glass">
-        <h3>你在现实世界中的运行方式</h3>
-        <div class="cards-3">
-          <article class="mini-card">
-            <div class="mini-icon">👥</div>
-            <h4>在人群里</h4>
-            <p id="socialText"></p>
-          </article>
-          <article class="mini-card">
-            <div class="mini-icon">🛠️</div>
-            <h4>做事情时</h4>
-            <p id="workText"></p>
-          </article>
-          <article class="mini-card">
-            <div class="mini-icon">🌱</div>
-            <h4>成长提示</h4>
-            <p id="growthText"></p>
-          </article>
-        </div>
-      </section>
-
-      <section class="result-section glass">
-        <h3>你的优势模块</h3>
-        <div class="list" id="strengthList"></div>
-      </section>
-
-      <section class="result-section glass">
-        <h3>可能偶尔卡住你的地方</h3>
-        <div class="list" id="riskList"></div>
-      </section>
-
-      <div class="result-actions">
-        <button class="primary-btn" id="downloadBtn" type="button">下载结果海报</button>
-        <button class="secondary-btn" id="copyBtn" type="button">复制分享文案</button>
-        <button class="secondary-btn" id="restartBtn" type="button">重新测试</button>
-      </div>
-    </section>
+    <h2 class="section-title">这次主要测你哪几个抽象维度</h2>
+    <div class="axis-list">
+      <div class="card axis-card"><strong>社交电量</strong><p>你是群聊显眼包，还是静音潜水型老实人？</p></div>
+      <div class="card axis-card"><strong>开工方式</strong><p>你属于先冲了再说，还是表格先建好再开工？</p></div>
+      <div class="card axis-card"><strong>看事习惯</strong><p>你看一条朋友圈会脑补出一整季，还是先看事实再说？</p></div>
+      <div class="card axis-card"><strong>判断标准</strong><p>你更看人情世故，还是更信规则和逻辑？</p></div>
+    </div>
 
     <footer>
-      星轨人格 Orbit-16 为原创娱乐测试。人格结果不是永久定论，你在不同阶段也可能走上新的轨道。
+      本测试主打一个有梗和好玩，仅供娱乐与自我观察，不用于心理诊断、招聘、医疗、升学等高风险判断。
     </footer>
-  </main>
+  </section>
 
-  <div class="toast" id="toast"></div>
+  <section class="screen" id="testScreen">
+    <div class="test-wrap">
+      <div class="card progress-card">
+        <div class="progress-meta">
+          <span id="progressText">第 1 / 32 题</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress"><div id="progressFill"></div></div>
+      </div>
 
-  <script>
-    "use strict";
+      <div class="card question-card">
+        <div class="kicker" id="questionKicker">生活切片 · 第 01 题</div>
+        <h2 class="question" id="questionText"></h2>
+        <div class="options" id="options"></div>
+        <div class="nav">
+          <button class="ghost" id="prevBtn">上一题</button>
+          <button class="primary" id="nextBtn" disabled>下一题</button>
+        </div>
+        <div class="tip">答案会自动保存在当前浏览器中，也可以按数字键 1-5 快速作答，懒人友好。</div>
+      </div>
+    </div>
+  </section>
 
-    // =========================
-    // 1. 原创四维体系
-    // =========================
-    const AXES = {
-      energy: {
-        name: "能量场",
-        lowCode: "D",
-        highCode: "L",
-        lowLabel: "潜能量",
-        highLabel: "光能量"
-      },
-      rhythm: {
-        name: "行动节奏",
-        lowCode: "B",
-        highCode: "J",
-        lowLabel: "筑模式",
-        highLabel: "跃模式"
-      },
-      lens: {
-        name: "观察镜头",
-        lowCode: "T",
-        highCode: "A",
-        lowLabel: "迹视角",
-        highLabel: "幻视角"
-      },
-      compass: {
-        name: "内在罗盘",
-        lowCode: "R",
-        highCode: "C",
-        lowLabel: "衡判断",
-        highLabel: "共判断"
-      }
-    };
+  <section class="screen" id="loadingScreen">
+    <div class="card loading-card">
+      <div class="loader"></div>
+      <h2>正在加载你的互联网人设</h2>
+      <p id="loadingText">正在查看你在群聊里的真实身份……</p>
+    </div>
+  </section>
 
-    const OPTION_LABELS = [
-      "完全不像我",
-      "比较不像我",
-      "看情况 / 一半一半",
-      "比较像我",
-      "非常像我"
-    ];
+  <section class="screen" id="resultScreen">
+    <div class="result-top">
+      <div class="card illus-card">
+        <div class="code" id="typeCode"></div>
+        <div class="illus-box" id="avatarBox"></div>
+      </div>
+      <div class="card info-card">
+        <h2 id="typeName"></h2>
+        <div class="sub" id="typeSubtitle"></div>
+        <p class="summary" id="typeSummary"></p>
+        <div class="keyword-wrap" id="keywords"></div>
+        <div class="hidden" id="hiddenBox"></div>
+      </div>
+    </div>
 
-    // score: -2 ~ 2；sign=-1 表示反向题
-    const QUESTIONS = [
-      { axis:"energy", sign: 1, text:"进入一个几乎没有熟人的聚会，我通常能很快找到可以聊天的人。" },
-      { axis:"energy", sign:-1, text:"连续和很多人相处后，我最想做的事是独自安静一会儿。" },
-      { axis:"energy", sign: 1, text:"遇到有趣的想法，我会忍不住立刻找人分享。" },
-      { axis:"energy", sign:-1, text:"比起热闹现场，我更喜欢在角落里先观察整个空间。" },
-      { axis:"energy", sign: 1, text:"团队冷场时，我常常会自然地把气氛重新点起来。" },
-      { axis:"energy", sign:-1, text:"我更习惯先在心里整理好，再把真实想法说出来。" },
-      { axis:"energy", sign: 1, text:"认识新朋友对我来说，通常比想象中轻松。" },
-      { axis:"energy", sign:-1, text:"没有必要时，我不会主动进入别人的注意中心。" },
+    <div class="card traits" id="traitsCard"></div>
 
-      { axis:"rhythm", sign: 1, text:"面对新任务，我更愿意先动起来，再边做边修正。" },
-      { axis:"rhythm", sign:-1, text:"开始一件重要事情前，我希望先把步骤和时间安排清楚。" },
-      { axis:"rhythm", sign: 1, text:"临时改变计划常常让我觉得有点刺激，而不是麻烦。" },
-      { axis:"rhythm", sign:-1, text:"如果桌面、文件和待办都很混乱，我会明显不舒服。" },
-      { axis:"rhythm", sign: 1, text:"我经常在最后时刻爆发出惊人的执行力。" },
-      { axis:"rhythm", sign:-1, text:"我喜欢把大目标拆成一串能逐个完成的小节点。" },
-      { axis:"rhythm", sign: 1, text:"即使信息还不完整，我也可以先做一个可用版本。" },
-      { axis:"rhythm", sign:-1, text:"比起灵感突然降临，我更相信稳定重复的节奏。" },
+    <div class="two-col">
+      <div class="card mini">
+        <h3>把这个互联网人设丢进现实，大概会这样</h3>
+        <p id="friendText"></p>
+        <p id="workText" style="margin-top:12px;"></p>
+        <p id="loveText" style="margin-top:12px;"></p>
+      </div>
+      <div class="card mini">
+        <h3>你这个人设最拿手的几招</h3>
+        <div class="list" id="strengthList"></div>
+      </div>
+    </div>
 
-      { axis:"lens", sign: 1, text:"看到一件普通的小事，我常常会联想到更大的故事或可能性。" },
-      { axis:"lens", sign:-1, text:"判断一件事时，我更相信亲眼看到和实际验证过的信息。" },
-      { axis:"lens", sign: 1, text:"我会因为一个尚未成形的点子兴奋很久。" },
-      { axis:"lens", sign:-1, text:"抽象概念如果没有具体例子，我会觉得它有点飘。" },
-      { axis:"lens", sign: 1, text:"我很容易想象一件事在未来可能发展成什么样。" },
-      { axis:"lens", sign:-1, text:"比起“也许可以”，我更关心“现在到底能不能做到”。" },
-      { axis:"lens", sign: 1, text:"我喜欢研究隐藏含义、象征和事物背后的关联。" },
-      { axis:"lens", sign:-1, text:"解决问题时，我通常先从最直接、最现实的线索入手。" },
+    <div class="card section-card">
+      <h3 style="margin:0 0 14px;font-size:18px;">这个人设容易出现的翻车现场</h3>
+      <div class="list" id="riskList"></div>
+      <div class="actions">
+        <button class="primary" id="copyBtn">复制我的抽象人设文案</button>
+        <button class="secondary" id="restartBtn">重新测试</button>
+      </div>
+    </div>
 
-      { axis:"compass", sign: 1, text:"做决定时，我会认真考虑这件事会让相关的人有什么感受。" },
-      { axis:"compass", sign:-1, text:"即使某个结论不太讨喜，只要逻辑成立，我也愿意坚持。" },
-      { axis:"compass", sign: 1, text:"朋友向我倾诉时，我会先理解情绪，而不是马上给解决方案。" },
-      { axis:"compass", sign:-1, text:"发生争论时，我更关注谁的论据更完整，而不是谁更委屈。" },
-      { axis:"compass", sign: 1, text:"我容易察觉别人没有直接说出口的情绪变化。" },
-      { axis:"compass", sign:-1, text:"规则如果总因为个人情况被打破，我会觉得系统失去公平。" },
-      { axis:"compass", sign: 1, text:"我希望自己的选择不仅有效，也尽量让人舒服。" },
-      { axis:"compass", sign:-1, text:"需要取舍时，我能够把个人好恶先放到一边。" }
-    ];
+    <footer>
+      结果不是永久标签。你今天是显眼包，明天也可能突然切成已读不回仙人。
+    </footer>
+  </section>
+</div>
 
-    // =========================
-    // 2. 16 种原创人格
-    // =========================
-    const PROFILES = {
-      LJAC: {
-        name:"光焰漫游者",
-        subtitle:"你不是走进房间，你是给房间通了电。",
-        summary:"你靠互动获得能量，喜欢快速进入现场，也常常把新想法变成一场说走就走的实验。你对人的情绪非常敏感，行动中带着感染力。别人可能觉得你像一束移动的聚光灯，而你真正擅长的是让陌生人迅速产生“我们是一队”的感觉。",
-        keywords:["感染力","行动直觉","共情表达","创意现场"],
-        social:"你容易成为连接不同人的那一位。热情是真实的，但要注意别把自己的社交电量当成无限续航。",
-        work:"你适合需要创意、沟通和快速试错的环境。最强状态往往出现在“边行动边召集伙伴”的项目里。",
-        growth:"在每次冲出去之前，给自己十分钟确认优先级。你的速度很珍贵，方向感会让它更强。",
-        strengths:["能够快速点亮团队气氛","擅长把抽象想法讲得有画面","面对变化时反应灵活"],
-        risks:["容易同时点开太多任务","可能因为照顾气氛而忽略自己的疲惫","灵感很快，收尾速度偶尔跟不上"]
-      },
-      LJAR: {
-        name:"闪电策展人",
-        subtitle:"脑内开着十个窗口，还能把它们排成展览。",
-        summary:"你外向、快速、好奇，也习惯用逻辑筛选想法。你喜欢把新鲜概念带到现实里测试，善于发现趋势、连接资源，并迅速判断什么值得继续。你不是单纯追求热闹，而是在热闹里寻找结构和突破口。",
-        keywords:["趋势雷达","快速判断","资源连接","锋利表达"],
-        social:"你喜欢有内容、有观点的交流。无聊寒暄可能让你掉电，但一场高密度讨论能让你瞬间满格。",
-        work:"你适合创新项目、内容策划、产品探索和需要快速决策的场景。",
-        growth:"别让“我已经看懂了”替代真正的倾听。慢半拍，有时会得到更完整的信息。",
-        strengths:["擅长识别机会与趋势","表达清晰，能快速推动讨论","能把分散信息组合成新方案"],
-        risks:["可能过早否定还没成熟的想法","容易对节奏慢的人失去耐心","启动很多，复盘不够"]
-      },
-      LJTC: {
-        name:"热场玩家",
-        subtitle:"哪里有人，哪里就可能被你变成主场。",
-        summary:"你重视现实体验，喜欢直接参与，也很会读懂现场氛围。你通常不是靠长篇理论影响别人，而是靠真实行动、及时反应和让人舒服的互动。你是那种能在尴尬时递出台阶，也能在混乱时先把事情做起来的人。",
-        keywords:["现场感","亲和力","及时反应","务实热情"],
-        social:"你很会察言观色，也愿意主动照顾群体体验。别忘了，偶尔不负责气氛也完全没问题。",
-        work:"适合服务、活动、运营、销售、执行和任何需要“人到现场就能解决问题”的领域。",
-        growth:"把经验沉淀成方法，你的临场能力就会从“好用”升级为“可复制”。",
-        strengths:["能够快速适应陌生环境","擅长解决眼前真实问题","让别人感到自然、被接住"],
-        risks:["可能忽视长期规划","容易为了现场和谐而过度答应","对抽象长期任务耐心不足"]
-      },
-      LJTR: {
-        name:"现场指挥官",
-        subtitle:"事情一乱，你的大脑反而开始清晰。",
-        summary:"你喜欢直接进入问题，快速抓住现实条件并做出判断。你不太迷恋复杂仪式，真正关心的是“现在怎么推进”。你的外向并不一定是爱热闹，而是习惯把信息、资源和人迅速调动起来。",
-        keywords:["决断力","现实推进","临场组织","结果导向"],
-        social:"你直率、清楚，别人通常知道该怎么和你合作。表达结论时多补一句原因，会减少不必要的摩擦。",
-        work:"适合管理、应急、运营、执行、谈判和需要快速收敛方案的任务。",
-        growth:"不是所有问题都需要马上解决。有些情绪先被看见，效率反而会更高。",
-        strengths:["在混乱中快速建立秩序","敢于承担决策压力","对资源和现实限制敏感"],
-        risks:["语气可能比自己意识到的更强硬","容易低估情绪成本","可能把休息也变成待办事项"]
-      },
-      LBAC: {
-        name:"星港召集者",
-        subtitle:"你让热情有归宿，也让理想真的靠岸。",
-        summary:"你既喜欢与人连接，也善于把愿景变成稳定结构。你能看见未来，并愿意为团队设计路线、规则和节奏。你的温暖不是松散的，而是带着组织力：既会鼓励人，也会认真把事情落地。",
-        keywords:["愿景组织","团队凝聚","长期主义","温暖领导"],
-        social:"你很容易成为群体中的核心连接点。注意别把所有人的状态都背在自己身上。",
-        work:"适合团队管理、教育、品牌、社群、项目统筹和长期建设。",
-        growth:"允许别人用不同于你的方式完成任务。真正的组织力也包括留白。",
-        strengths:["能把共同愿景说得清楚","擅长长期维护关系与节奏","兼顾人心和项目进度"],
-        risks:["容易承担过多责任","对团队失衡非常敏感","可能因为追求整体而忽略个人边界"]
-      },
-      LBAR: {
-        name:"未来架构师",
-        subtitle:"你不只想赢一局，你在设计下一张地图。",
-        summary:"你外向但并不浮躁，擅长把远期目标、资源配置和执行路径放在同一张图里。你喜欢有逻辑的愿景，也有能力把复杂项目讲到大家愿意一起做。相比即时掌声，你更在意系统是否真的有效。",
-        keywords:["战略视野","结构表达","系统推进","目标感"],
-        social:"你欣赏有想法、能独立思考的人。交流时多保留一些探索空间，会让合作更有创造性。",
-        work:"适合战略、创业、产品、管理、咨询与复杂项目设计。",
-        growth:"别让未来的宏大结构遮住眼前的微小反馈。它们往往是系统最早的报警器。",
-        strengths:["能构建清晰的长期路线","擅长统筹复杂资源","表达有说服力并能带动执行"],
-        risks:["可能对低效和模糊缺乏耐心","容易把关系问题系统化处理","休息时仍在优化人生"]
-      },
-      LBTC: {
-        name:"温暖组织者",
-        subtitle:"你把照顾别人，做成了一种稳定能力。",
-        summary:"你擅长维护真实生活中的秩序，也在意每个人是否被照顾到。你通常可靠、细致、愿意承担，并会自然记住重要的小事。你的力量不一定高调，但常常让团队和关系在不知不觉中变得更稳。",
-        keywords:["可靠","细节照顾","稳定连接","务实温柔"],
-        social:"你愿意付出，也容易成为别人信赖的对象。请把自己的需要也放进安排表里。",
-        work:"适合行政、教育、服务、运营、护理、协调和需要耐心维护的工作。",
-        growth:"学会把“我来做”改成“我们怎么分工”。被支持并不等于不可靠。",
-        strengths:["细致观察并记住实际需求","能够长期维持稳定关系","做事有责任心和连续性"],
-        risks:["可能难以拒绝请求","容易因为别人不守约而受伤","倾向把疲惫藏到最后"]
-      },
-      LBTR: {
-        name:"旗舰推进者",
-        subtitle:"你最安心的声音，是项目按节点向前走。",
-        summary:"你擅长组织人、资源和时间，也重视现实结果。你讲话直接，行动稳定，通常能承担别人不愿意承担的复杂责任。你的安全感来自清晰、可控和完成度，而不是模糊的可能性。",
-        keywords:["执行管理","责任感","秩序","现实判断"],
-        social:"你重承诺，也看重可靠。给他人一些解释和试错空间，会让关系更有弹性。",
-        work:"适合管理、工程、行政、运营、财务、流程设计及大型项目推进。",
-        growth:"偶尔允许计划被更好的信息修改。调整路线不是失控，而是升级导航。",
-        strengths:["能够持续推进复杂任务","对规则、成本和风险敏感","在团队中提供稳定预期"],
-        risks:["可能把控制感等同于安全感","不易表达脆弱和不确定","对临时变化容忍度较低"]
-      },
-      DJAC: {
-        name:"月面造梦师",
-        subtitle:"你看起来安静，脑内却正在建一整个宇宙。",
-        summary:"你需要独处恢复能量，却拥有活跃、跳跃而充满情感的想象力。你常常先在内部形成一个世界，再选择合适的方式让它出现。你对细微情绪和象征十分敏感，创作、表达和深度关系都可能成为你的能量出口。",
-        keywords:["想象力","深度共情","自由创作","内在宇宙"],
-        social:"你不追求认识很多人，但一旦遇到对频的人，会愿意分享非常丰富的内在世界。",
-        work:"适合创作、设计、写作、研究、影像和需要个人空间的创新工作。",
-        growth:"把灵感放进一个小而固定的容器，比如每天完成二十分钟。宇宙也需要入口。",
-        strengths:["感受细腻，想象丰富","能从细节中发现独特意义","在深度交流中非常真诚"],
-        risks:["可能长时间停留在想象阶段","容易被外界情绪消耗","对现实琐事的耐心不稳定"]
-      },
-      DJAR: {
-        name:"独行实验家",
-        subtitle:"你不急着解释自己，先看看这套世界规则能不能被改写。",
-        summary:"你独立、好奇、喜欢用自己的方式试验新思路。你不一定热衷表达，但常常在内部快速重组信息，寻找更聪明的解法。你尊重逻辑，也不迷信旧规则；真正能打动你的，是一个既新鲜又自洽的系统。",
-        keywords:["独立思考","概念实验","逻辑创新","低调锋利"],
-        social:"你需要高质量而非高频率的交流。过度寒暄会让你掉电，真正有内容的讨论则会让你兴奋。",
-        work:"适合技术、研究、产品原型、策略、创意开发和复杂问题求解。",
-        growth:"让别人更早看到你的半成品。共享过程并不会削弱独立，反而可能加速突破。",
-        strengths:["能跳出既有框架思考","擅长发现系统漏洞与新路径","独立学习能力强"],
-        risks:["可能忽略沟通带来的协同价值","想法切换太快，落地不足","容易被重复流程消耗"]
-      },
-      DJTC: {
-        name:"安静共鸣者",
-        subtitle:"你不一定说很多，但常常听见别人没说出口的那句。",
-        summary:"你安静、敏感、现实感强，习惯通过细节理解人。你不会轻易把自己推到中心，却能在真实关系中提供稳定而细腻的支持。你更相信持续的行动，而不是高调的承诺。",
-        keywords:["细腻观察","安静支持","真实感","关系耐心"],
-        social:"你珍惜少数稳定关系，也容易成为别人愿意倾诉的人。记得留出不被打扰的恢复时间。",
-        work:"适合照护、设计、编辑、教育、客户支持以及需要耐心和细节感的工作。",
-        growth:"不要总等到“完全确定”才表达需求。小声说出来，也比一直猜更轻松。",
-        strengths:["能发现细微情绪变化","做事温和但有持续性","对现实需求具有敏锐感"],
-        risks:["容易把不满压在心里","可能过度适应别人","面对冲突时倾向退让"]
-      },
-      DJTR: {
-        name:"冷静解谜者",
-        subtitle:"别人看到麻烦，你看到一组尚未排序的线索。",
-        summary:"你偏好独立空间，行动灵活，并且擅长从现实线索中快速定位问题。你不爱不必要的讨论，更喜欢直接测试、拆解和修复。压力越集中，你反而越可能进入专注而清醒的状态。",
-        keywords:["问题拆解","冷静实操","独立反应","技术直觉"],
-        social:"你重视直接、可信和不过度打扰的关系。适度解释自己的沉默，会让别人更容易理解你。",
-        work:"适合技术、维修、工程、分析、应急处理和需要独立判断的岗位。",
-        growth:"不是所有情绪都能像故障一样排查。先陪伴，再修复，有时更有效。",
-        strengths:["面对突发问题保持冷静","善于通过实践快速学习","能够抓住最关键的现实线索"],
-        risks:["可能显得过于疏离","容易厌烦繁琐说明","长期规划和持续协作需要额外投入"]
-      },
-      DBAC: {
-        name:"深海守望者",
-        subtitle:"你把很远的未来，安静地放进今天的每一步。",
-        summary:"你拥有深度想象与情感洞察，也愿意为重要的人和理念建立稳定秩序。你不需要大量外界反馈，反而常在独处中形成清晰而长远的方向。你的温柔带着原则，你的理想也带着耐心。",
-        keywords:["深度愿景","安静坚持","意义感","温柔原则"],
-        social:"你倾向建立少数深厚关系。对方一旦进入你的信任范围，通常会感受到非常稳定的支持。",
-        work:"适合研究、写作、教育、心理支持、公益、策略与长期内容建设。",
-        growth:"别把所有答案都留到完全成熟之后。让可信的人参与早期过程，会减少孤独负担。",
-        strengths:["能长期守护重要目标","对人的深层动机有洞察","价值观稳定且有耐心"],
-        risks:["容易独自承担过多情绪","理想与现实冲突时消耗较大","可能不善于及时寻求帮助"]
-      },
-      DBAR: {
-        name:"星图工程师",
-        subtitle:"你安静地画图，然后让复杂世界开始有坐标。",
-        summary:"你独立、理性、长期导向，擅长把复杂信息整理成可执行结构。你更信任深思后的判断，而不是现场气氛。你不急着获得掌声，只在意系统是否准确、稳定，并能经得起时间检验。",
-        keywords:["系统思维","长期规划","独立判断","结构洞察"],
-        social:"你需要尊重边界、言之有物的关系。偶尔主动表达欣赏，会让重要的人更有安全感。",
-        work:"适合架构、研究、数据、工程、策略、金融和复杂系统设计。",
-        growth:"让方案先以 70 分进入现实，再用反馈把它磨到 90 分。完美不是唯一入口。",
-        strengths:["能够看见复杂系统的结构","长期计划与独立推进能力强","判断稳定，不易被情绪带偏"],
-        risks:["可能过度优化而延迟行动","对低质量沟通容忍度低","容易把真实需要隐藏在理性之后"]
-      },
-      DBTC: {
-        name:"林间修复师",
-        subtitle:"你不是喧闹的火焰，而是一盏一直亮着的灯。",
-        summary:"你安静、务实、温和，也非常重视稳定关系与真实责任。你常通过具体行动表达关心：记住细节、按时出现、把事情处理妥当。你的价值不一定第一眼最显眼，却经常是团队和关系最离不开的部分。",
-        keywords:["稳定照顾","细节可靠","低调耐心","现实温柔"],
-        social:"你更喜欢熟悉、真诚、节奏稳定的互动。不要因为不想麻烦别人，就把所有负担都自己留下。",
-        work:"适合档案、编辑、护理、行政、财务、质量管理和长期服务型工作。",
-        growth:"练习明确表达边界。真正稳定的关系，不需要你一直牺牲自己来维持。",
-        strengths:["做事细致、有连续性","通过行动建立信任","能敏锐发现现实中的小问题"],
-        risks:["可能低估自己的贡献","不喜欢变化，容易被打乱节奏","压力常常积累到很晚才说"]
-      },
-      DBTR: {
-        name:"黑曜规划师",
-        subtitle:"你不制造噪音，你制造确定性。",
-        summary:"你内敛、务实、理性且有秩序感。你喜欢清晰规则、可靠信息和可验证结果，面对复杂任务时能够沉下去建立稳定结构。你的冷静常常是团队的安全底座，而不是距离感。",
-        keywords:["稳定判断","风险意识","秩序构建","深度专注"],
-        social:"你重承诺、重边界，也希望关系具有一致性。偶尔把关心说出来，别人会更容易读懂你。",
-        work:"适合工程、审计、数据、法务、行政、质量控制和精密规划。",
-        growth:"给变化保留一点合法席位。计划之外的东西不一定是威胁，也可能是新信息。",
-        strengths:["做事严谨，可靠度高","能够提前识别风险","专注于长期稳定与质量"],
-        risks:["容易把情绪视为干扰项","对突发变化压力较大","可能因为标准过高而显得难以接近"]
-      }
-    };
+<div class="toast" id="toast"></div>
 
-    // =========================
-    // 3. 应用状态
-    // =========================
-    const STORAGE_KEY = "orbit16-progress-v1";
-    let currentIndex = 0;
-    let answers = Array(QUESTIONS.length).fill(null);
-    let latestResult = null;
-
-    const $ = (id) => document.getElementById(id);
-
-    const screens = {
-      home: $("homeScreen"),
-      test: $("testScreen"),
-      loading: $("loadingScreen"),
-      result: $("resultScreen")
-    };
-
-    function showScreen(name) {
-      Object.values(screens).forEach(screen => screen.classList.remove("active"));
-      screens[name].classList.add("active");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+<script>
+const AXES = {
+  "energy": {
+    "name": "社交电量",
+    "lowCode": "J",
+    "highCode": "R",
+    "lowLabel": "慢热模式",
+    "highLabel": "热场模式"
+  },
+  "rhythm": {
+    "name": "开工方式",
+    "lowCode": "W",
+    "highCode": "C",
+    "lowLabel": "先排再做",
+    "highLabel": "先冲再改"
+  },
+  "lens": {
+    "name": "看事习惯",
+    "lowCode": "Y",
+    "highCode": "X",
+    "lowLabel": "实况视角",
+    "highLabel": "脑洞视角"
+  },
+  "compass": {
+    "name": "判断标准",
+    "lowCode": "G",
+    "highCode": "Q",
+    "lowLabel": "规则优先",
+    "highLabel": "人情优先"
+  }
+};
+const QUESTIONS = [
+  {
+    "scene": "陌生聚会",
+    "axis": "energy",
+    "sign": 1,
+    "text": "朋友带我去一个几乎全是陌生人的饭局，我通常能在菜上齐前找到聊得来的人。"
+  },
+  {
+    "scene": "下班以后",
+    "axis": "energy",
+    "sign": -1,
+    "text": "连续和很多人说了一天话后，我回家最想做的是关门、静音、自己待着。"
+  },
+  {
+    "scene": "群聊现场",
+    "axis": "energy",
+    "sign": 1,
+    "text": "群里突然冷场时，我经常会主动丢个表情包、话题或离谱问题把气氛救回来。"
+  },
+  {
+    "scene": "新环境",
+    "axis": "energy",
+    "sign": -1,
+    "text": "刚进新班级、新公司或新社团时，我会先观察谁和谁熟、大家怎么说话。"
+  },
+  {
+    "scene": "分享欲",
+    "axis": "energy",
+    "sign": 1,
+    "text": "刷到一个特别好笑的视频，我通常会立刻转给好几个人，而不是自己笑完就算。"
+  },
+  {
+    "scene": "临时来电",
+    "axis": "energy",
+    "sign": -1,
+    "text": "不太熟的人突然给我打电话，我会先紧张一下，甚至希望对方改成发消息。"
+  },
+  {
+    "scene": "周末安排",
+    "axis": "energy",
+    "sign": 1,
+    "text": "空闲周末如果完全没人约，我会主动找人吃饭、逛街或做点什么。"
+  },
+  {
+    "scene": "表达方式",
+    "axis": "energy",
+    "sign": -1,
+    "text": "真正重要的话，我往往要先在脑子里排练几遍，才会说出口。"
+  },
+  {
+    "scene": "收到任务",
+    "axis": "rhythm",
+    "sign": 1,
+    "text": "老师或领导布置一个新任务时，我通常会先打开文件开始做，再慢慢想清楚完整方案。"
+  },
+  {
+    "scene": "旅行攻略",
+    "axis": "rhythm",
+    "sign": -1,
+    "text": "出门旅行前，我希望路线、住宿、交通和大概时间都提前安排得差不多。"
+  },
+  {
+    "scene": "计划突变",
+    "axis": "rhythm",
+    "sign": 1,
+    "text": "朋友临时说“别去原来的店了，我们换一家”，我通常觉得问题不大，甚至更有意思。"
+  },
+  {
+    "scene": "房间状态",
+    "axis": "rhythm",
+    "sign": -1,
+    "text": "桌面、文件夹、聊天待办同时一团乱时，我会明显感觉大脑也卡住了。"
+  },
+  {
+    "scene": "截止日期",
+    "axis": "rhythm",
+    "sign": 1,
+    "text": "越接近截止日期，我越容易突然进入高效率状态，像临时开了加速器。"
+  },
+  {
+    "scene": "复杂任务",
+    "axis": "rhythm",
+    "sign": -1,
+    "text": "面对大作业或大项目，我喜欢先拆成“今天能完成的几小步”。"
+  },
+  {
+    "scene": "先有再好",
+    "axis": "rhythm",
+    "sign": 1,
+    "text": "信息还不完整时，我也愿意先做一个能看的版本，再根据反馈修改。"
+  },
+  {
+    "scene": "生活节奏",
+    "axis": "rhythm",
+    "sign": -1,
+    "text": "比起突然来的灵感，我更相信每天按固定节奏做一点，最后慢慢完成。"
+  },
+  {
+    "scene": "看到小事",
+    "axis": "lens",
+    "sign": 1,
+    "text": "看到朋友圈里一句没头没尾的话，我很容易脑补对方背后发生了整段故事。"
+  },
+  {
+    "scene": "买东西",
+    "axis": "lens",
+    "sign": -1,
+    "text": "买手机、电脑或家电时，我更在意参数、评价和实际体验，而不是品牌讲的故事。"
+  },
+  {
+    "scene": "突发点子",
+    "axis": "lens",
+    "sign": 1,
+    "text": "洗澡、坐车或睡前，我经常突然想到一个看起来能改变人生的新点子。"
+  },
+  {
+    "scene": "听人解释",
+    "axis": "lens",
+    "sign": -1,
+    "text": "别人讲一个很抽象的概念时，我通常会问：“能不能举个具体例子？”"
+  },
+  {
+    "scene": "规划未来",
+    "axis": "lens",
+    "sign": 1,
+    "text": "想到一件新事，我会很快开始想它半年后、三年后可能发展成什么样。"
+  },
+  {
+    "scene": "解决问题",
+    "axis": "lens",
+    "sign": -1,
+    "text": "东西坏了或事情出错时，我一般先检查最直接、最可能出问题的地方。"
+  },
+  {
+    "scene": "看电影",
+    "axis": "lens",
+    "sign": 1,
+    "text": "看完电影或电视剧后，我会琢磨隐喻、象征和角色为什么做出那些选择。"
+  },
+  {
+    "scene": "学新软件",
+    "axis": "lens",
+    "sign": -1,
+    "text": "学习一个新软件时，我更愿意直接跟着教程操作，而不是先研究它的设计理念。"
+  },
+  {
+    "scene": "朋友倾诉",
+    "axis": "compass",
+    "sign": 1,
+    "text": "朋友说自己很难受时，我通常先让对方把情绪说完，而不是马上告诉他该怎么办。"
+  },
+  {
+    "scene": "团队争论",
+    "axis": "compass",
+    "sign": -1,
+    "text": "大家意见冲突时，我会先判断哪套方案逻辑更完整，而不是谁说话更委屈。"
+  },
+  {
+    "scene": "给人反馈",
+    "axis": "compass",
+    "sign": 1,
+    "text": "指出别人问题前，我会先想怎样说既真实，又不会让对方当场难堪。"
+  },
+  {
+    "scene": "规则例外",
+    "axis": "compass",
+    "sign": -1,
+    "text": "如果规则总因为“这个人比较特殊”而改变，我会担心它最后失去公平。"
+  },
+  {
+    "scene": "饭局选择",
+    "axis": "compass",
+    "sign": 1,
+    "text": "一群人点餐时，只要有人明显不吃某种东西，我会倾向换成大家都能接受的选择。"
+  },
+  {
+    "scene": "分工不均",
+    "axis": "compass",
+    "sign": -1,
+    "text": "小组里有人总是少做一点，即使关系不错，我也会觉得应该把分工说清楚。"
+  },
+  {
+    "scene": "安慰方式",
+    "axis": "compass",
+    "sign": 1,
+    "text": "别人情绪低落时，我会注意语气、表情和他没说出口的部分。"
+  },
+  {
+    "scene": "重要取舍",
+    "axis": "compass",
+    "sign": -1,
+    "text": "需要做关键决定时，我能够暂时放下个人好恶，优先选择更合理的方案。"
+  }
+];
+const PROFILES = {
+  "RCXQ": {
+    "name": "朋友圈气氛组扛把子",
+    "subtitle": "哪儿一冷场，哪儿就轮到你出来整点节目效果。",
+    "summary": "你属于典型的“人还没到，气氛先到了”的类型：会接梗、会抛梗、会带气氛，还会认真照顾大家有没有玩到一起。你做事也不太喜欢磨蹭，想到什么就先试试，所以生活里经常有一种“先整起来再说”的活力感。",
+    "keywords": [
+      "社交显眼包",
+      "行动快",
+      "脑洞在线",
+      "会照顾人"
+    ],
+    "friend": "朋友眼里，你像一台会讲话的快乐弹幕机，跟你出门通常不会无聊。",
+    "work": "做事情时，你往往先把人和气氛带起来，再边做边补细节，适合需要创意和互动的场景。",
+    "love": "在关系里，你会热情表达，也很会给情绪价值，但偶尔也要记得给自己留电量。",
+    "strengths": [
+      "能迅速打破尴尬和陌生",
+      "把普通场面变得热闹有梗",
+      "边行动边激发别人的参与感"
+    ],
+    "risks": [
+      "容易同时开太多坑",
+      "顾着照顾大家，自己却先累了",
+      "开头特别炸，收尾偶尔佛系"
+    ],
+    "avatar": {
+      "bg": "#FDE7E0",
+      "shirt": "#FF8A65",
+      "hair": "#3E2C2C",
+      "accent": "#7C4DFF",
+      "prop": "megaphone",
+      "mood": "smile",
+      "deco": "spark"
     }
-
-    function saveProgress() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentIndex, answers }));
-      updateResumeButton();
+  },
+  "RCXG": {
+    "name": "弹幕区赛博诸葛亮",
+    "subtitle": "没人问你也没关系，你会主动把方案、流程和复盘一起发出来。",
+    "summary": "你是那种看到任何事情都会自动进入“让我来给你分析一下”模式的人。你既有表达欲，也有判断力，很擅长在聊天里突然冒出一句“要不这样试试”，然后大家觉得：诶，还真行。你很像朋友圈里的自带策划功能的人。",
+    "keywords": [
+      "脑子快",
+      "爱当军师",
+      "爱出招",
+      "擅长破局"
+    ],
+    "friend": "朋友眼里，你是那种随时能给建议，而且建议还真挺能打的人。",
+    "work": "你适合做需要提案、策划、试错和快速判断的事情，点子和逻辑通常一起到。",
+    "love": "感情里你不太喜欢反复猜来猜去，更倾向把事情说开、把问题讲明白。",
+    "strengths": [
+      "很会发现更聪明的做法",
+      "能快速组织信息和观点",
+      "讨论时常能提出关键方案"
+    ],
+    "risks": [
+      "有时分析欲太强，像在给生活开会",
+      "可能不小心显得太会讲道理",
+      "容易对低效率失去耐心"
+    ],
+    "avatar": {
+      "bg": "#EAF3FF",
+      "shirt": "#5C7CFA",
+      "hair": "#2D3250",
+      "accent": "#FFB703",
+      "prop": "laptop",
+      "mood": "wink",
+      "deco": "idea"
     }
-
-    function loadProgress() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!saved || !Array.isArray(saved.answers) || saved.answers.length !== QUESTIONS.length) return false;
-        currentIndex = Math.max(0, Math.min(QUESTIONS.length - 1, Number(saved.currentIndex) || 0));
-        answers = saved.answers.map(v => Number.isInteger(v) ? v : null);
-        return true;
-      } catch {
-        return false;
-      }
+  },
+  "RCYQ": {
+    "name": "人间嘴甜能量补给站",
+    "subtitle": "别人给情绪价值按份卖，你直接论吨批发。",
+    "summary": "你主打一个会接人、会接话、还会接住情绪。别人情绪一变化，你常常比本人还先察觉。你会接话、会递台阶、会在大家不舒服的时候把场子慢慢扶正。你的热情不是浮在表面的，而是真能让别人感到“被接住”。",
+    "keywords": [
+      "情绪价值拉满",
+      "现场感强",
+      "反应快",
+      "人缘好"
+    ],
+    "friend": "朋友眼里，你像一个大型情绪补给站，难过的时候找你会舒服很多。",
+    "work": "你很适合做需要沟通、服务、协调和照顾体验的事情，尤其在现场特别好用。",
+    "love": "你会认真经营氛围，懂得让关系有温度，但也要小心别把所有人的感受都扛在自己身上。",
+    "strengths": [
+      "特别会照顾场面和情绪",
+      "能迅速察觉谁不自在",
+      "把关心落实在很具体的小动作里"
+    ],
+    "risks": [
+      "有时太怕别人不舒服",
+      "容易一不小心答应太多",
+      "自己的情绪经常排到最后处理"
+    ],
+    "avatar": {
+      "bg": "#FFF1D6",
+      "shirt": "#FFB703",
+      "hair": "#6D4C41",
+      "accent": "#EC407A",
+      "prop": "heart",
+      "mood": "smile",
+      "deco": "heart"
     }
-
-    function clearProgress() {
-      localStorage.removeItem(STORAGE_KEY);
-      currentIndex = 0;
-      answers = Array(QUESTIONS.length).fill(null);
-      updateResumeButton();
+  },
+  "RCYG": {
+    "name": "事故现场总控台",
+    "subtitle": "别人刚说“完了”，你已经把Plan B和Plan C排好了。",
+    "summary": "你属于越乱越冷静的现场型选手，翻车局里反而最有统治力。你会直接抓重点、拉人、分任务、推进度，是那种现实里很能顶事的人。你的存在感并不只是爱热闹，而是遇到事真的能扛一下。",
+    "keywords": [
+      "翻车局救火王",
+      "有执行力",
+      "现实派",
+      "顶得住"
+    ],
+    "friend": "朋友眼里，你像那种临时组局、行程出错、突发翻车时最想打电话的人。",
+    "work": "你适合执行、管理、运营和应急处理，尤其擅长把“乱”变成“能继续往前走”。",
+    "love": "关系里你不怕解决问题，但有时也可以先停一下，听听对方想被理解什么。",
+    "strengths": [
+      "在混乱中能快速建立秩序",
+      "敢拍板，也敢负责",
+      "对现实条件和资源很敏感"
+    ],
+    "risks": [
+      "说话容易过于直接",
+      "容易先解决问题，后处理感受",
+      "休息时脑子也像在值班"
+    ],
+    "avatar": {
+      "bg": "#E9F7EF",
+      "shirt": "#34A853",
+      "hair": "#303030",
+      "accent": "#FF7043",
+      "prop": "clipboard",
+      "mood": "smile",
+      "deco": "check"
     }
-
-    function updateResumeButton() {
-      const hasSaved = localStorage.getItem(STORAGE_KEY);
-      $("resumeBtn").style.display = hasSaved ? "inline-block" : "none";
+  },
+  "RWXQ": {
+    "name": "局王之王社交组头子",
+    "subtitle": "别人嘴上说改天聚，你真的会把饭店、小程序和定位全发出来。",
+    "summary": "你是那种把“口头约饭”真正落地成现实的人。你很会连接人，也很会记细节：谁周末有空、谁不吃香菜、谁最近心情一般。你让朋友局不只停留在聊天框里，而是真的能成行。",
+    "keywords": [
+      "局王体质",
+      "会照顾",
+      "执行力强",
+      "社交组织者"
+    ],
+    "friend": "朋友眼里，没有你，很多“改天聚”最后都只会停在“改天”。",
+    "work": "你兼具热情、想法和安排能力，适合做统筹、活动、社群和长期项目。",
+    "love": "你会很认真地经营关系，擅长制造温度和仪式感，但别把全部责任都揽过来。",
+    "strengths": [
+      "能把想法变成具体安排",
+      "同时记住人的感受和事情进度",
+      "很容易成为圈子里的连接器"
+    ],
+    "risks": [
+      "容易不知不觉管太多",
+      "责任感一上来就很难松手",
+      "可能对没回应的人有点失望"
+    ],
+    "avatar": {
+      "bg": "#F3EBFF",
+      "shirt": "#9B5DE5",
+      "hair": "#4A2C5A",
+      "accent": "#2EC4B6",
+      "prop": "phone",
+      "mood": "smile",
+      "deco": "spark"
     }
-
-    // =========================
-    // 4. 答题流程
-    // =========================
-    function startTest(useSaved = false) {
-      if (useSaved) loadProgress();
-      else clearProgress();
-
-      showScreen("test");
-      renderQuestion();
+  },
+  "RWXG": {
+    "name": "人生KPI总负责人",
+    "subtitle": "别人活着靠运气，你活着像在自己给自己做项目汇报。",
+    "summary": "你脑内常驻甘特图和阶段目标，做人做事都想讲究一个稳准狠。旅行会做攻略，目标会拆节点，连休息也希望尽量有质量。你很像生活里的总导演：大方向、节奏和资源都希望心里有谱。",
+    "keywords": [
+      "KPI脑子",
+      "会规划",
+      "脑子清楚",
+      "自带全局观"
+    ],
+    "friend": "朋友眼里，你像那种“看起来不慌，但其实早就想了三套备选方案”的人。",
+    "work": "适合做管理、产品、策略、创业和复杂项目，因为你很会把大事情梳顺。",
+    "love": "感情里你会认真考虑长期适配度，不太爱玩模糊，喜欢清晰和稳定。",
+    "strengths": [
+      "很会搭框架和看长线",
+      "复杂问题里能抓住主线",
+      "推进目标时稳定、靠谱、有章法"
+    ],
+    "risks": [
+      "容易把生活也活成项目",
+      "有时对低效过敏",
+      "放松时仍然忍不住想优化"
+    ],
+    "avatar": {
+      "bg": "#EEF6FF",
+      "shirt": "#3A86FF",
+      "hair": "#1D3557",
+      "accent": "#FFBE0B",
+      "prop": "chart",
+      "mood": "smile",
+      "deco": "idea"
     }
-
-    function renderQuestion() {
-      const q = QUESTIONS[currentIndex];
-      const answeredCount = answers.filter(v => v !== null).length;
-      const percent = Math.round((answeredCount / QUESTIONS.length) * 100);
-
-      $("progressText").textContent = `第 ${currentIndex + 1} / ${QUESTIONS.length} 题`;
-      $("progressPercent").textContent = `${percent}%`;
-      $("progressFill").style.width = `${percent}%`;
-      $("questionKicker").textContent = `轨道校准 ${String(currentIndex + 1).padStart(2, "0")}`;
-      $("questionText").textContent = q.text;
-
-      const container = $("optionsContainer");
-      container.innerHTML = "";
-
-      OPTION_LABELS.forEach((label, index) => {
-        const score = index - 2;
-        const btn = document.createElement("button");
-        btn.className = "option" + (answers[currentIndex] === score ? " selected" : "");
-        btn.type = "button";
-        btn.innerHTML = `<span class="option-key">${index + 1}</span><span>${label}</span>`;
-        btn.addEventListener("click", () => selectAnswer(score));
-        container.appendChild(btn);
-      });
-
-      $("prevBtn").disabled = currentIndex === 0;
-      $("nextBtn").disabled = answers[currentIndex] === null;
-      $("nextBtn").textContent = currentIndex === QUESTIONS.length - 1 ? "生成我的星轨 →" : "下一题 →";
+  },
+  "RWYQ": {
+    "name": "饭局细节控活体备忘录",
+    "subtitle": "你上次说不吃香菜，他下次点单前已经先替你避雷了。",
+    "summary": "你是那种不一定最吵，但细节浓度高得离谱的人。你不一定是最抢眼的那个，但一定是会让人觉得很安心的那个。你会记住别人喜欢什么、不喜欢什么，也会把关心体现在很实际的小事里：提醒、照顾、准备、准时到达。",
+    "keywords": [
+      "细节雷达",
+      "超可靠",
+      "温柔稳定",
+      "记性惊人"
+    ],
+    "friend": "朋友眼里，你是那种“有你在就不会出错太多”的存在。",
+    "work": "你很适合做需要耐心、稳定、照顾体验和维护秩序的事情。",
+    "love": "你爱得很具体，不浮夸，但很耐久。别人会在你的细节里感受到被重视。",
+    "strengths": [
+      "非常会记生活里的关键信息",
+      "关心会落实在真实行动上",
+      "稳定、耐心，让人很有安全感"
+    ],
+    "risks": [
+      "容易不知不觉替别人想太多",
+      "不太擅长把委屈及时说出来",
+      "有时会低估自己的重要性"
+    ],
+    "avatar": {
+      "bg": "#FFF4E8",
+      "shirt": "#F4A261",
+      "hair": "#5D4037",
+      "accent": "#2A9D8F",
+      "prop": "coffee",
+      "mood": "smile",
+      "deco": "heart"
     }
+  },
+  "RWYG": {
+    "name": "Excel转世流程之神",
+    "subtitle": "只要表格拉起来、节点排明白，你整个人的精神状态都会稳定不少。",
+    "summary": "你对混乱、拖延和“再说吧”有天然过敏反应。你很会管理进度、分配任务、控制风险，是那种让人一看就觉得“这事交给你我放心”的类型。你对不守时、不靠谱和模糊不清会天然警觉。",
+    "keywords": [
+      "表格启动器",
+      "稳定输出",
+      "守时守约",
+      "执行靠谱"
+    ],
+    "friend": "朋友眼里，你像那种会在出发前一天把时间、地点、交通再确认一遍的人。",
+    "work": "你适合行政、运营、财务、项目管理和所有需要把事情稳稳落地的岗位。",
+    "love": "关系里你重视承诺与一致性，不爱画大饼，更相信说到做到。",
+    "strengths": [
+      "让复杂事情按顺序落地",
+      "很会管理风险和细节",
+      "可靠度高，能提供稳定预期"
+    ],
+    "risks": [
+      "容易对突发变化上头",
+      "有时显得要求高",
+      "控制感太强时会给自己压力"
+    ],
+    "avatar": {
+      "bg": "#EEF0F7",
+      "shirt": "#7B8CDE",
+      "hair": "#2F3C4F",
+      "accent": "#F95738",
+      "prop": "checklist",
+      "mood": "normal",
+      "deco": "check"
+    }
+  },
+  "JCXQ": {
+    "name": "深夜emo发疯创作家",
+    "subtitle": "白天主打一个正常营业，晚上主打一个备忘录里宇宙重启。",
+    "summary": "你看起来安安静静，实际上脑内弹幕和小剧场从没停过。很多灵感、情绪和想法会在你独处时突然冒出来，尤其是深夜。你很会感受，也很会想象，所以普通的小事在你这里经常能长成一整个故事宇宙。",
+    "keywords": [
+      "深夜发疯灵感",
+      "内心戏多",
+      "细腻敏感",
+      "创作型脑回路"
+    ],
+    "friend": "朋友眼里，你平时安安静静，一旦打开话匣子就像突然更新了导演剪辑版。",
+    "work": "你适合创作、写作、设计、影像、内容表达和需要个人空间的工作。",
+    "love": "关系里你慢热但投入，一旦确认信任，就会把很多柔软和真心交出来。",
+    "strengths": [
+      "想象力和感受力都很强",
+      "很会把情绪和画面转成表达",
+      "能从小事里看到别人看不到的意味"
+    ],
+    "risks": [
+      "容易想很多，开始很慢",
+      "情绪受环境影响比较大",
+      "现实琐事可能总被拖到最后"
+    ],
+    "avatar": {
+      "bg": "#F1EDFF",
+      "shirt": "#8E7DF2",
+      "hair": "#2B2E4A",
+      "accent": "#F28482",
+      "prop": "notebook",
+      "mood": "dreamy",
+      "deco": "moon"
+    }
+  },
+  "JCXG": {
+    "name": "后台挂机型脑力怪",
+    "subtitle": "消息不一定秒回，但问题大概率已经在后台被你推演完一轮了。",
+    "summary": "你不是冷漠，你只是更习惯先在脑内完成一轮严谨运算。你擅长独立分析，也很会从复杂信息里拆出关键点。你看起来安静，但脑子通常没闲着，很多逻辑、方案和可能性都已经在后台偷偷运行过了。",
+    "keywords": [
+      "后台挂机思考",
+      "逻辑强",
+      "独立思考",
+      "低调会分析"
+    ],
+    "friend": "朋友眼里，你属于平时不多话，但一开口就往往讲到点子上的那类人。",
+    "work": "你适合技术、研究、产品、策略和需要深度思考的工作类型。",
+    "love": "你不爱无效拉扯，更喜欢有内容、清楚、能交流的关系。",
+    "strengths": [
+      "擅长独立拆解问题",
+      "能发现结构里的关键点",
+      "不容易被外界气氛轻易带跑"
+    ],
+    "risks": [
+      "容易被误会成冷淡",
+      "想法很多但不一定马上说",
+      "有时会把自己关得太安静"
+    ],
+    "avatar": {
+      "bg": "#E9F5FF",
+      "shirt": "#4D96FF",
+      "hair": "#263238",
+      "accent": "#9C27B0",
+      "prop": "tablet",
+      "mood": "wink",
+      "deco": "idea"
+    }
+  },
+  "JCYQ": {
+    "name": "静音潜水型树洞精",
+    "subtitle": "群消息一百条你都看了，但真正出手一般都在私聊窗口。",
+    "summary": "你可能不是群里最吵的那个，但一定是最适合深聊的那个。别人和你聊天时常会觉得放松，因为你不会急着评判，也不会用自己的节奏压过去。你像一块安静但很温柔的海绵，能接住很多细腻的情绪。",
+    "keywords": [
+      "静音树洞",
+      "温柔慢热",
+      "安全感",
+      "树洞体质"
+    ],
+    "friend": "朋友眼里，你像那种“平时不抢镜，但有事真的想找你聊”的人。",
+    "work": "你适合支持、编辑、教育、设计、照护和需要细心观察的工作。",
+    "love": "你表达爱意比较安静，但很稳，很长情，也很会留意对方的情绪波动。",
+    "strengths": [
+      "倾听能力很强",
+      "擅长营造安全的交流氛围",
+      "能细腻察觉对方没说出口的东西"
+    ],
+    "risks": [
+      "容易把情绪闷着不说",
+      "冲突里常常先让自己后退",
+      "可能过度适应别人"
+    ],
+    "avatar": {
+      "bg": "#F3F7F0",
+      "shirt": "#7FB069",
+      "hair": "#4E5D52",
+      "accent": "#FF7F50",
+      "prop": "headphones",
+      "mood": "soft",
+      "deco": "heart"
+    }
+  },
+  "JCYG": {
+    "name": "表面冷脸实则超会修",
+    "subtitle": "嘴上像在嫌麻烦，实际上手已经开始帮你收拾残局了。",
+    "summary": "你主打一个不爱废话，但真遇到事的时候特别靠谱。你擅长排查问题、抓重点、快速修复，对“先把事搞定”这件事有天然天赋。你给人的感觉可能很淡，但你的效率往往很硬核。",
+    "keywords": [
+      "冷脸高效率",
+      "实操型",
+      "修问题高手",
+      "稳定输出"
+    ],
+    "friend": "朋友眼里，你像那种嘴上说麻烦，手上却已经帮忙的人。",
+    "work": "你适合技术、工程、分析、维修、运营支持和需要快速定位问题的事情。",
+    "love": "你不是特别高调表达型，但会用行动证明自己靠得住。",
+    "strengths": [
+      "能快速抓到问题核心",
+      "面对突发状况很冷静",
+      "行动效率高，不爱空谈"
+    ],
+    "risks": [
+      "容易显得有点距离感",
+      "不太擅长解释自己的情绪",
+      "别人可能跟不上你的问题解决速度"
+    ],
+    "avatar": {
+      "bg": "#EDF2F7",
+      "shirt": "#607D8B",
+      "hair": "#212121",
+      "accent": "#00BFA6",
+      "prop": "wrench",
+      "mood": "normal",
+      "deco": "check"
+    }
+  },
+  "JWXQ": {
+    "name": "爱你老己慢热长情派",
+    "subtitle": "你在认真爱别人，也在努力学会别老把自己排在最后。",
+    "summary": "你是那种外表平静、内里很有情感厚度的人。你不喜欢表面热闹，更在意关系和目标是不是值得长期投入。你会为了重要的人、重要的事悄悄坚持很久。你有理想，也有温度，只是表达方式比较安静。",
+    "keywords": [
+      "慢热但很走心",
+      "内心稳定",
+      "有理想",
+      "重意义"
+    ],
+    "friend": "朋友眼里，你是那种不常出现，但一出现就很真、很稳、很靠得住的人。",
+    "work": "你适合长期建设型工作，比如内容、教育、研究、公益、心理支持等。",
+    "love": "你一旦认真，就会很走心，也会努力经营长期的安全感和陪伴感。",
+    "strengths": [
+      "长期投入能力很强",
+      "情感深、原则稳",
+      "能在安静中持续守护重要事物"
+    ],
+    "risks": [
+      "容易独自消化很多情绪",
+      "不太习惯主动求助",
+      "有时会为了顾全别人忽略自己"
+    ],
+    "avatar": {
+      "bg": "#FFF0F5",
+      "shirt": "#E76F51",
+      "hair": "#6A4C93",
+      "accent": "#2A9D8F",
+      "prop": "plant",
+      "mood": "soft",
+      "deco": "heart"
+    }
+  },
+  "JWXG": {
+    "name": "脑内开会型终身会员",
+    "subtitle": "别人看到你在发呆，其实你的脑内会议已经开始表决第三轮。",
+    "summary": "你属于表面没动静，脑内却天天在进行高层会议的人。你习惯先在脑子里过几轮，再决定怎么做，所以很多人会觉得你稳、清醒、很有自己的判断。你不一定高调，但你对结构、方向和长期结果的把握往往很强。",
+    "keywords": [
+      "脑内会议中心",
+      "深度思考",
+      "判断稳定",
+      "规划型"
+    ],
+    "friend": "朋友眼里，你像那种表面平静，实际上已经在脑内推演过很多种结局的人。",
+    "work": "你适合研究、策略、架构、数据、管理和复杂系统设计。",
+    "love": "你重视长期匹配和价值观一致，虽然表达克制，但认真起来很可靠。",
+    "strengths": [
+      "很会搭长期结构",
+      "判断稳，不容易被气氛带偏",
+      "对复杂问题有深度洞察力"
+    ],
+    "risks": [
+      "容易过度思考",
+      "有时太晚才说出真实想法",
+      "可能被误会成距离感强"
+    ],
+    "avatar": {
+      "bg": "#EEF5FF",
+      "shirt": "#457B9D",
+      "hair": "#243B53",
+      "accent": "#FF9F1C",
+      "prop": "books",
+      "mood": "normal",
+      "deco": "idea"
+    }
+  },
+  "JWYQ": {
+    "name": "低耗能但很会爱人型",
+    "subtitle": "存在感不抢戏，但细节照顾这一块你从来没掉过线。",
+    "summary": "你不是靠高调输出存在感，而是靠稳定和细节慢慢让人上头。你稳定、细致、温和，很多别人忘掉的小事你都会记得。你不会大张旗鼓地表现自己，但你做的那些细节，经常正是让一段关系、一件事情稳定下去的关键。",
+    "keywords": [
+      "低耗能高浓度",
+      "超细心",
+      "稳稳的",
+      "让人安心"
+    ],
+    "friend": "朋友眼里，你像一个安静但非常可靠的后台支持系统。",
+    "work": "你适合做精细、耐心、稳定、长期维护型的工作，属于看起来不喧哗但特别不可缺的人。",
+    "love": "你表达喜欢的方式很细，很生活化，也很耐久，让人越相处越安心。",
+    "strengths": [
+      "细节观察力强",
+      "做事持续稳定",
+      "擅长用小动作传递关心"
+    ],
+    "risks": [
+      "容易把自己的感受放太后面",
+      "不喜欢突发变化",
+      "常低估自己给别人的安全感"
+    ],
+    "avatar": {
+      "bg": "#F7F4EA",
+      "shirt": "#A3B18A",
+      "hair": "#5C5346",
+      "accent": "#D97706",
+      "prop": "envelope",
+      "mood": "soft",
+      "deco": "check"
+    }
+  },
+  "JWYG": {
+    "name": "永不宕机型人间服务器",
+    "subtitle": "你平时低调在线，关键时刻却总能稳定输出，不掉线不崩盘。",
+    "summary": "你像现实生活里的底层系统，平时不吵不闹，但一出问题大家第一个想到你。你不太喜欢花里胡哨的形式，更看重事情能不能长期稳定运行。你做事有秩序、有边界、有原则，别人可能不会第一时间想到你有多会发光，但真遇到事，往往最先想起的是：有你在应该不会乱。",
+    "keywords": [
+      "稳定得像系统",
+      "靠谱耐用",
+      "有边界",
+      "抗风险"
+    ],
+    "friend": "朋友眼里，你像一个平时低调、关键时刻极其可靠的存在。",
+    "work": "你适合工程、管理、审计、法务、数据、质量控制和需要高稳定性的工作。",
+    "love": "你不太爱讲花哨的话，但会用持续的行动、责任感和稳定性给人安全感。",
+    "strengths": [
+      "可靠度极高",
+      "规则感和边界感清晰",
+      "擅长长期维持质量与秩序"
+    ],
+    "risks": [
+      "容易压着情绪不说",
+      "不太喜欢临时变化",
+      "有时显得太严谨、不够松弛"
+    ],
+    "avatar": {
+      "bg": "#F1F3F5",
+      "shirt": "#6C757D",
+      "hair": "#343A40",
+      "accent": "#20C997",
+      "prop": "shield",
+      "mood": "normal",
+      "deco": "check"
+    }
+  }
+};
+const OPTION_LABELS = [
+  "完全不像我",
+  "不太像我",
+  "看情况",
+  "挺像我的",
+  "太像我了"
+];
+const STORAGE_KEY = "daily16-simple-v1";
+let currentIndex = 0;
+let answers = Array(QUESTIONS.length).fill(null);
+let latestResult = null;
 
-    function selectAnswer(score) {
+const $ = (id) => document.getElementById(id);
+const screens = {
+  home: $("homeScreen"),
+  test: $("testScreen"),
+  loading: $("loadingScreen"),
+  result: $("resultScreen")
+};
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[name].classList.add("active");
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentIndex, answers }));
+  updateResume();
+}
+
+function loadProgress() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!data || !Array.isArray(data.answers) || data.answers.length !== QUESTIONS.length) return false;
+    currentIndex = Math.max(0, Math.min(QUESTIONS.length - 1, Number(data.currentIndex) || 0));
+    answers = data.answers.map(v => Number.isInteger(v) ? v : null);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearProgress() {
+  localStorage.removeItem(STORAGE_KEY);
+  currentIndex = 0;
+  answers = Array(QUESTIONS.length).fill(null);
+  updateResume();
+}
+
+function updateResume() {
+  $("resumeBtn").style.display = localStorage.getItem(STORAGE_KEY) ? "inline-block" : "none";
+}
+
+function startTest(resume = false) {
+  if (resume) loadProgress();
+  else clearProgress();
+  showScreen("test");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentIndex];
+  const answered = answers.filter(v => v !== null).length;
+  const percent = Math.round(answered / QUESTIONS.length * 100);
+  $("progressText").textContent = `第 ${currentIndex + 1} / ${QUESTIONS.length} 题`;
+  $("progressPercent").textContent = `${percent}%`;
+  $("progressFill").style.width = `${percent}%`;
+  $("questionKicker").textContent = `${q.scene} · 第 ${String(currentIndex + 1).padStart(2, "0")} 题`;
+  $("questionText").textContent = q.text;
+  const wrap = $("options");
+  wrap.innerHTML = "";
+  OPTION_LABELS.forEach((label, idx) => {
+    const score = idx - 2;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option" + (answers[currentIndex] === score ? " selected" : "");
+    btn.innerHTML = `<span class="option-key">${idx + 1}</span><span>${label}</span>`;
+    btn.onclick = () => {
       answers[currentIndex] = score;
       saveProgress();
       renderQuestion();
-
-      // 自动进入下一题，最后一题除外
       if (currentIndex < QUESTIONS.length - 1) {
         setTimeout(() => {
-          if (answers[currentIndex] !== null) {
-            currentIndex += 1;
-            saveProgress();
-            renderQuestion();
-          }
-        }, 260);
+          currentIndex += 1;
+          saveProgress();
+          renderQuestion();
+        }, 180);
       }
-    }
-
-    function goNext() {
-      if (answers[currentIndex] === null) return;
-
-      if (currentIndex < QUESTIONS.length - 1) {
-        currentIndex += 1;
-        saveProgress();
-        renderQuestion();
-      } else {
-        submitTest();
-      }
-    }
-
-    function goPrev() {
-      if (currentIndex > 0) {
-        currentIndex -= 1;
-        saveProgress();
-        renderQuestion();
-      }
-    }
-
-    // =========================
-    // 5. 评分与结果
-    // =========================
-    function calculateResult() {
-      const raw = { energy:0, rhythm:0, lens:0, compass:0 };
-      const limits = { energy:0, rhythm:0, lens:0, compass:0 };
-
-      QUESTIONS.forEach((q, index) => {
-        const answer = answers[index] ?? 0;
-        raw[q.axis] += answer * q.sign;
-        limits[q.axis] += 2;
-      });
-
-      const scores = {};
-      Object.keys(raw).forEach(axis => {
-        scores[axis] = Math.round(((raw[axis] + limits[axis]) / (limits[axis] * 2)) * 100);
-      });
-
-      let code = "";
-      Object.keys(AXES).forEach(axis => {
-        code += scores[axis] >= 50 ? AXES[axis].highCode : AXES[axis].lowCode;
-      });
-
-      const profile = PROFILES[code] || PROFILES.DBTR;
-      const hidden = detectHiddenType(scores);
-
-      return { code, scores, profile, hidden };
-    }
-
-    function detectHiddenType(scores) {
-      const neutralCount = answers.filter(v => v === 0).length;
-      const extremeCount = answers.filter(v => Math.abs(v) === 2).length;
-
-      if (neutralCount >= 12) {
-        return {
-          title:"隐藏轨道：量子叠加态",
-          text:"你拒绝被单一选项框住。不是没主见，而是你真的会根据情境切换运行模式。"
-        };
-      }
-      if (scores.rhythm >= 76 && scores.energy >= 62) {
-        return {
-          title:"隐藏轨道：截止线冲浪手",
-          text:"越接近最后时刻，你的反应速度越像打开了涡轮。请记得：刺激可以偶尔用，别把它当长期燃料。"
-        };
-      }
-      if (scores.energy <= 34 && scores.lens >= 68) {
-        return {
-          title:"隐藏轨道：深夜造梦台",
-          text:"白天安静接收世界，晚上在脑内重建宇宙。你的最佳灵感常常出现在别人已经准备睡觉的时候。"
-        };
-      }
-      if (scores.energy >= 70 && scores.compass >= 70) {
-        return {
-          title:"隐藏轨道：人群充电宝",
-          text:"你很容易让别人感觉被接住。不过真正的充电宝也需要插回电源，不要一直只给别人供电。"
-        };
-      }
-      if (extremeCount >= 20) {
-        return {
-          title:"隐藏轨道：极光放大器",
-          text:"你的偏好非常鲜明，喜欢与不喜欢都很有轮廓。坚定是优势，也记得给变化留一点入口。"
-        };
-      }
-      return {
-        title:"隐藏轨道：稳定观测中",
-        text:"你的四条维度相互配合得比较均衡，没有单一模式完全接管驾驶舱。"
-      };
-    }
-
-    function submitTest() {
-      if (answers.some(v => v === null)) {
-        showToast("还有题目没有完成");
-        return;
-      }
-
-      latestResult = calculateResult();
-      showScreen("loading");
-
-      const loadingTexts = [
-        "读取你的社交电量……",
-        "检查你对计划表的真实态度……",
-        "扫描脑内正在同时运行的窗口……",
-        "判断你是冷静，还是懒得解释……",
-        "正在把性格碎片拼成一条轨道……"
-      ];
-
-      let i = 0;
-      $("loadingText").textContent = loadingTexts[0];
-      const timer = setInterval(() => {
-        i = (i + 1) % loadingTexts.length;
-        $("loadingText").textContent = loadingTexts[i];
-      }, 520);
-
-      setTimeout(() => {
-        clearInterval(timer);
-        renderResult(latestResult);
-        clearProgress();
-        showScreen("result");
-      }, 2300);
-    }
-
-    function renderResult(result) {
-      const { code, scores, profile, hidden } = result;
-
-      $("typeCode").innerHTML = code.split("").map(char => `<span class="code-char">${char}</span>`).join("");
-      $("typeName").textContent = profile.name;
-      $("typeSubtitle").textContent = profile.subtitle;
-      $("typeSummary").textContent = profile.summary;
-
-      $("keywords").innerHTML = profile.keywords
-        .map(word => `<span class="keyword"># ${word}</span>`)
-        .join("");
-
-      $("eggTitle").textContent = hidden.title;
-      $("eggText").textContent = hidden.text;
-
-      $("socialText").textContent = profile.social;
-      $("workText").textContent = profile.work;
-      $("growthText").textContent = profile.growth;
-
-      $("strengthList").innerHTML = profile.strengths
-        .map((item, i) => `<div class="list-item"><b>${i + 1}</b><span>${item}</span></div>`)
-        .join("");
-
-      $("riskList").innerHTML = profile.risks
-        .map((item, i) => `<div class="list-item"><b>${i + 1}</b><span>${item}</span></div>`)
-        .join("");
-
-      renderDimensions(scores);
-      drawRadar(scores);
-    }
-
-    function renderDimensions(scores) {
-      const container = $("dimensionList");
-      container.innerHTML = "";
-
-      Object.entries(AXES).forEach(([axis, config]) => {
-        const score = scores[axis];
-        const dominant = score >= 50 ? config.highLabel : config.lowLabel;
-        const item = document.createElement("div");
-        item.innerHTML = `
-          <div class="dimension-head">
-            <span>${config.name}</span>
-            <span>${dominant} ${Math.max(score, 100 - score)}%</span>
-          </div>
-          <div class="dimension-track">
-            <div class="dimension-bar" style="width:${score}%"></div>
-          </div>
-          <div class="dimension-poles">
-            <span>${config.lowLabel}</span>
-            <span>${config.highLabel}</span>
-          </div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function drawRadar(scores) {
-      const canvas = $("radarCanvas");
-      const ctx = canvas.getContext("2d");
-      const width = canvas.width;
-      const height = canvas.height;
-      const cx = width / 2;
-      const cy = height / 2 + 6;
-      const radius = 108;
-      const values = [scores.energy, scores.rhythm, scores.lens, scores.compass];
-      const labels = ["能量场", "行动节奏", "观察镜头", "内在罗盘"];
-
-      ctx.clearRect(0, 0, width, height);
-
-      // 网格
-      ctx.strokeStyle = "rgba(255,255,255,.13)";
-      ctx.lineWidth = 1;
-      for (let level = 1; level <= 4; level++) {
-        ctx.beginPath();
-        for (let i = 0; i < 4; i++) {
-          const angle = -Math.PI / 2 + i * Math.PI / 2;
-          const r = radius * (level / 4);
-          const x = cx + Math.cos(angle) * r;
-          const y = cy + Math.sin(angle) * r;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      }
-
-      // 轴线与标签
-      ctx.font = '13px "Microsoft YaHei", sans-serif';
-      ctx.fillStyle = "#a8b0cd";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      for (let i = 0; i < 4; i++) {
-        const angle = -Math.PI / 2 + i * Math.PI / 2;
-        const x = cx + Math.cos(angle) * radius;
-        const y = cy + Math.sin(angle) * radius;
-
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        const labelX = cx + Math.cos(angle) * (radius + 30);
-        const labelY = cy + Math.sin(angle) * (radius + 24);
-        ctx.fillText(labels[i], labelX, labelY);
-      }
-
-      // 数据面
-      const gradient = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
-      gradient.addColorStop(0, "rgba(139,92,246,.72)");
-      gradient.addColorStop(.55, "rgba(34,211,238,.56)");
-      gradient.addColorStop(1, "rgba(251,113,133,.62)");
-
-      ctx.beginPath();
-      values.forEach((value, i) => {
-        const angle = -Math.PI / 2 + i * Math.PI / 2;
-        // 0-100 转成 20%-100% 半径，避免极低值完全缩到中心
-        const scaled = .2 + (value / 100) * .8;
-        const x = cx + Math.cos(angle) * radius * scaled;
-        const y = cy + Math.sin(angle) * radius * scaled;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.closePath();
-      ctx.fillStyle = gradient;
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,.82)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // 节点
-      values.forEach((value, i) => {
-        const angle = -Math.PI / 2 + i * Math.PI / 2;
-        const scaled = .2 + (value / 100) * .8;
-        const x = cx + Math.cos(angle) * radius * scaled;
-        const y = cy + Math.sin(angle) * radius * scaled;
-        ctx.beginPath();
-        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = "#fff";
-        ctx.fill();
-      });
-    }
-
-    // =========================
-    // 6. 结果海报
-    // =========================
-    function downloadPoster() {
-      if (!latestResult) return;
-
-      const { code, scores, profile, hidden } = latestResult;
-      const canvas = document.createElement("canvas");
-      canvas.width = 1080;
-      canvas.height = 1440;
-      const ctx = canvas.getContext("2d");
-
-      // 背景
-      const bg = ctx.createLinearGradient(0, 0, 1080, 1440);
-      bg.addColorStop(0, "#090d20");
-      bg.addColorStop(.48, "#19133c");
-      bg.addColorStop(1, "#071523");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, 1080, 1440);
-
-      // 光晕
-      const glow1 = ctx.createRadialGradient(160, 170, 0, 160, 170, 380);
-      glow1.addColorStop(0, "rgba(139,92,246,.38)");
-      glow1.addColorStop(1, "rgba(139,92,246,0)");
-      ctx.fillStyle = glow1;
-      ctx.fillRect(0, 0, 600, 600);
-
-      const glow2 = ctx.createRadialGradient(920, 380, 0, 920, 380, 330);
-      glow2.addColorStop(0, "rgba(34,211,238,.23)");
-      glow2.addColorStop(1, "rgba(34,211,238,0)");
-      ctx.fillStyle = glow2;
-      ctx.fillRect(550, 0, 530, 800);
-
-      // 标题
-      ctx.fillStyle = "#cfd5f5";
-      ctx.font = '700 28px "Microsoft YaHei", sans-serif';
-      ctx.fillText("星轨人格 ORBIT-16", 74, 92);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.font = '900 84px "Microsoft YaHei", sans-serif';
-      ctx.fillText(profile.name, 74, 230);
-
-      ctx.fillStyle = "#c4b5fd";
-      ctx.font = '600 32px "Microsoft YaHei", sans-serif';
-      wrapText(ctx, profile.subtitle, 74, 292, 920, 48);
-
-      // 代码方块
-      code.split("").forEach((char, i) => {
-        const x = 74 + i * 122;
-        const g = ctx.createLinearGradient(x, 0, x + 96, 0);
-        g.addColorStop(0, "#8b5cf6");
-        g.addColorStop(1, "#22d3ee");
-        ctx.fillStyle = g;
-        roundedRect(ctx, x, 390, 96, 96, 24);
-        ctx.fill();
-        ctx.fillStyle = "#fff";
-        ctx.font = '900 46px Arial, sans-serif';
-        ctx.textAlign = "center";
-        ctx.fillText(char, x + 48, 453);
-      });
-      ctx.textAlign = "left";
-
-      // 描述
-      ctx.fillStyle = "#d7dcef";
-      ctx.font = '400 29px "Microsoft YaHei", sans-serif';
-      wrapText(ctx, profile.summary, 74, 560, 920, 46, 6);
-
-      // 四维分数
-      let y = 870;
-      Object.entries(AXES).forEach(([axis, config], index) => {
-        const score = scores[axis];
-        const dominant = score >= 50 ? config.highLabel : config.lowLabel;
-
-        ctx.fillStyle = "#fff";
-        ctx.font = '700 26px "Microsoft YaHei", sans-serif';
-        ctx.fillText(`${config.name} · ${dominant}`, 74, y);
-
-        ctx.fillStyle = "rgba(255,255,255,.10)";
-        roundedRect(ctx, 74, y + 24, 780, 18, 9);
-        ctx.fill();
-
-        const bar = ctx.createLinearGradient(74, 0, 854, 0);
-        bar.addColorStop(0, "#8b5cf6");
-        bar.addColorStop(1, "#22d3ee");
-        ctx.fillStyle = bar;
-        roundedRect(ctx, 74, y + 24, 780 * (score / 100), 18, 9);
-        ctx.fill();
-
-        ctx.fillStyle = "#c4b5fd";
-        ctx.font = '800 26px Arial, sans-serif';
-        ctx.fillText(`${Math.max(score, 100 - score)}%`, 888, y + 39);
-
-        y += 96;
-      });
-
-      // 彩蛋
-      ctx.fillStyle = "rgba(250,204,21,.12)";
-      roundedRect(ctx, 62, 1245, 956, 112, 26);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(250,204,21,.32)";
-      ctx.stroke();
-
-      ctx.fillStyle = "#fde68a";
-      ctx.font = '700 25px "Microsoft YaHei", sans-serif';
-      ctx.fillText(hidden.title, 88, 1291);
-
-      ctx.fillStyle = "#e5dfc7";
-      ctx.font = '400 22px "Microsoft YaHei", sans-serif';
-      wrapText(ctx, hidden.text, 88, 1330, 880, 34, 2);
-
-      ctx.fillStyle = "#949dbd";
-      ctx.font = '400 20px "Microsoft YaHei", sans-serif';
-      ctx.fillText("娱乐测试 · 不是心理诊断 · 你的轨道可以继续变化", 74, 1402);
-
-      const link = document.createElement("a");
-      link.download = `星轨人格-${code}-${profile.name}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-      showToast("结果海报已生成");
-    }
-
-    function roundedRect(ctx, x, y, w, h, r) {
-      const radius = Math.min(r, w / 2, h / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.arcTo(x + w, y, x + w, y + h, radius);
-      ctx.arcTo(x + w, y + h, x, y + h, radius);
-      ctx.arcTo(x, y + h, x, y, radius);
-      ctx.arcTo(x, y, x + w, y, radius);
-      ctx.closePath();
-    }
-
-    function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
-      const chars = [...text];
-      let line = "";
-      let lineCount = 0;
-
-      for (let i = 0; i < chars.length; i++) {
-        const testLine = line + chars[i];
-        if (ctx.measureText(testLine).width > maxWidth && line) {
-          ctx.fillText(line, x, y + lineCount * lineHeight);
-          line = chars[i];
-          lineCount++;
-          if (lineCount >= maxLines) return;
-        } else {
-          line = testLine;
-        }
-      }
-      if (lineCount < maxLines) ctx.fillText(line, x, y + lineCount * lineHeight);
-    }
-
-    async function copyShareText() {
-      if (!latestResult) return;
-
-      const { code, profile, hidden } = latestResult;
-      const text = `我的星轨人格是【${code} · ${profile.name}】\n${profile.subtitle}\n${hidden.title}\n来测测你是哪条轨道吧！`;
-
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("分享文案已复制");
-      } catch {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        textarea.remove();
-        showToast("分享文案已复制");
-      }
-    }
-
-    function showToast(message) {
-      const toast = $("toast");
-      toast.textContent = message;
-      toast.classList.add("show");
-      clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
-    }
-
-    function restart() {
-      clearProgress();
-      latestResult = null;
-      showScreen("home");
-    }
-
-    // =========================
-    // 7. 事件绑定
-    // =========================
-    $("startBtn").addEventListener("click", () => startTest(false));
-    $("resumeBtn").addEventListener("click", () => startTest(true));
-    $("prevBtn").addEventListener("click", goPrev);
-    $("nextBtn").addEventListener("click", goNext);
-    $("downloadBtn").addEventListener("click", downloadPoster);
-    $("copyBtn").addEventListener("click", copyShareText);
-    $("restartBtn").addEventListener("click", restart);
-    $("topRestartBtn").addEventListener("click", restart);
-
-    document.addEventListener("keydown", (event) => {
-      if (!screens.test.classList.contains("active")) return;
-      const n = Number(event.key);
-      if (n >= 1 && n <= 5) {
-        selectAnswer(n - 3);
-      }
-      if (event.key === "ArrowLeft") goPrev();
-      if (event.key === "ArrowRight" && answers[currentIndex] !== null) goNext();
-    });
-
-    updateResumeButton();
-  </script>
+    };
+    wrap.appendChild(btn);
+  });
+  $("prevBtn").disabled = currentIndex === 0;
+  $("nextBtn").disabled = answers[currentIndex] === null;
+  $("nextBtn").textContent = currentIndex === QUESTIONS.length - 1 ? "生成我的抽象人设" : "下一题";
+}
+
+function calculateResult() {
+  const raw = { energy:0, rhythm:0, lens:0, compass:0 };
+  const limits = { energy:0, rhythm:0, lens:0, compass:0 };
+  QUESTIONS.forEach((q, i) => {
+    const a = answers[i] ?? 0;
+    raw[q.axis] += a * q.sign;
+    limits[q.axis] += 2;
+  });
+  const scores = {};
+  Object.keys(raw).forEach(axis => {
+    scores[axis] = Math.round(((raw[axis] + limits[axis]) / (limits[axis] * 2)) * 100);
+  });
+  let code = "";
+  Object.keys(AXES).forEach(axis => {
+    code += scores[axis] >= 50 ? AXES[axis].highCode : AXES[axis].lowCode;
+  });
+  return {
+    code,
+    scores,
+    profile: PROFILES[code],
+    hidden: detectHiddenType(scores)
+  };
+}
+
+function detectHiddenType(scores) {
+  const neutralCount = answers.filter(v => v === 0).length;
+  const extremeCount = answers.filter(v => Math.abs(v) === 2).length;
+  if (neutralCount >= 12) return "隐藏彩蛋：人格加载全看网速 · 你不是没主见，你是特别看场合。";
+  if (scores.rhythm >= 76 && scores.energy >= 60) return "隐藏彩蛋：Deadline 天选战神 · 越到最后一刻，你越像临时被点亮了外挂。";
+  if (scores.energy <= 34 && scores.lens >= 68) return "隐藏彩蛋：深夜发疯永动机 · 白天安静做人，深夜脑内开演。";
+  if (scores.energy >= 70 && scores.compass >= 70) return "隐藏彩蛋：情绪价值永动机 · 你很会给别人补能量，但也别忘了给自己充电。";
+  if (scores.energy <= 36 && scores.rhythm <= 42) return "隐藏彩蛋：群聊已读不回仙人 · 不是不在，是在安静观察。";
+  if (extremeCount >= 20) return "隐藏彩蛋：浓人拒绝中间值 · 喜欢和不喜欢都写在脸上。";
+  return "隐藏彩蛋：老己今天看心情 · 你的模式切换能力很强，状态感十足。";
+}
+
+function submitTest() {
+  if (answers.some(v => v === null)) {
+    toast("还有题目没做完");
+    return;
+  }
+  latestResult = calculateResult();
+  showScreen("loading");
+  const loadingTexts = [
+    "正在查看你在群聊里到底是显眼包还是潜水怪……",
+    "检查你和 Deadline 到底谁才是真正的爹……",
+    "分析你点外卖时会不会看评论看半小时……",
+    "判断你是情绪价值永动机，还是冷脸省流派……",
+    "正在给你生成专属互联网人设图……"
+  ];
+  let i = 0;
+  $("loadingText").textContent = loadingTexts[0];
+  const timer = setInterval(() => {
+    i = (i + 1) % loadingTexts.length;
+    $("loadingText").textContent = loadingTexts[i];
+  }, 500);
+  setTimeout(() => {
+    clearInterval(timer);
+    renderResult(latestResult);
+    clearProgress();
+    showScreen("result");
+  }, 2200);
+}
+
+function renderResult(result) {
+  const { code, scores, profile, hidden } = result;
+  $("typeCode").innerHTML = code.split("").map(c => `<span>${c}</span>`).join("");
+  $("typeName").textContent = profile.name;
+  $("typeSubtitle").textContent = profile.subtitle;
+  $("typeSummary").textContent = profile.summary;
+  $("keywords").innerHTML = profile.keywords.map(k => `<span class="keyword"># ${k}</span>`).join("");
+  $("hiddenBox").textContent = hidden;
+  $("avatarBox").innerHTML = createAvatar(profile);
+  $("friendText").textContent = "朋友眼里： " + profile.friend;
+  $("workText").textContent = "做事情时： " + profile.work;
+  $("loveText").textContent = "在关系里： " + profile.love;
+  $("strengthList").innerHTML = profile.strengths.map((item, i) => `<div class="list-item"><b>${i+1}</b><span>${item}</span></div>`).join("");
+  $("riskList").innerHTML = profile.risks.map((item, i) => `<div class="list-item"><b>${i+1}</b><span>${item}</span></div>`).join("");
+  renderTraits(scores);
+}
+
+function renderTraits(scores) {
+  const card = $("traitsCard");
+  card.innerHTML = '<h3 style="margin:0 0 16px;font-size:18px;">你的四个生活维度</h3>';
+  Object.entries(AXES).forEach(([axis, cfg]) => {
+    const score = scores[axis];
+    const name = score >= 50 ? cfg.highLabel : cfg.lowLabel;
+    card.innerHTML += `
+      <div class="trait-row">
+        <div class="trait-head"><span>${cfg.name}</span><span>${name} ${Math.max(score, 100-score)}%</span></div>
+        <div class="bar"><div style="width:${score}%"></div></div>
+        <div class="poles"><span>${cfg.lowLabel}</span><span>${cfg.highLabel}</span></div>
+      </div>
+    `;
+  });
+}
+
+function createAvatar(profile) {
+  const a = profile.avatar;
+  const prop = renderProp(a.prop, a.accent);
+  const deco = renderDeco(a.deco, a.accent);
+  const mouth = a.mood === "smile" ? "M150 171 Q160 180 170 171" :
+                a.mood === "wink" ? "M150 171 Q160 176 170 171" :
+                a.mood === "soft" ? "M152 171 Q160 175 168 171" :
+                a.mood === "dreamy" ? "M150 171 Q160 178 170 171" :
+                "M152 171 Q160 172 168 171";
+  return `
+  <svg width="100%" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" aria-label="人格角色图">
+    <rect width="320" height="320" rx="28" fill="${a.bg}"/>
+    <circle cx="250" cy="62" r="24" fill="rgba(255,255,255,.6)"/>
+    <circle cx="72" cy="76" r="16" fill="rgba(255,255,255,.45)"/>
+    ${deco}
+    <ellipse cx="160" cy="275" rx="72" ry="14" fill="rgba(37,50,75,.08)"/>
+    <rect x="120" y="150" width="80" height="86" rx="20" fill="${a.shirt}"/>
+    <rect x="134" y="215" width="22" height="42" rx="10" fill="#3a4a5e"/>
+    <rect x="164" y="215" width="22" height="42" rx="10" fill="#3a4a5e"/>
+    <rect x="115" y="156" width="18" height="65" rx="9" transform="rotate(12 115 156)" fill="${skin_color()}"/>
+    <rect x="187" y="156" width="18" height="65" rx="9" transform="rotate(-12 187 156)" fill="${skin_color()}"/>
+    <circle cx="160" cy="125" r="44" fill="${skin_color()}"/>
+    <path d="M118 127 Q119 76 160 76 Q205 76 202 130 L202 107 Q188 88 160 88 Q132 88 118 108 Z" fill="${a.hair}"/>
+    <circle cx="145" cy="125" r="3.2" fill="#25324b"/>
+    <circle cx="175" cy="125" r="3.2" fill="#25324b"/>
+    <path d="${mouth}" stroke="#25324b" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="134" cy="148" r="4" fill="#f2a9a0" opacity=".6"/>
+    <circle cx="186" cy="148" r="4" fill="#f2a9a0" opacity=".6"/>
+    <rect x="142" y="164" width="36" height="10" rx="5" fill="rgba(255,255,255,.18)"/>
+    ${prop}
+  </svg>`;
+}
+
+function skin_color() {
+  return "#F2C7A5";
+}
+
+function renderDeco(type, color) {
+  if (type === "spark") {
+    return `
+      <path d="M53 42 L58 56 L72 61 L58 66 L53 80 L48 66 L34 61 L48 56 Z" fill="${color}" opacity=".7"/>
+      <path d="M258 94 L262 105 L273 109 L262 113 L258 124 L254 113 L243 109 L254 105 Z" fill="${color}" opacity=".55"/>
+    `;
+  }
+  if (type === "idea") {
+    return `
+      <circle cx="258" cy="102" r="18" fill="${color}" opacity=".18"/>
+      <path d="M258 90 C248 90 243 97 243 105 C243 111 246 115 250 118 L250 124 L266 124 L266 118 C270 115 273 111 273 105 C273 97 268 90 258 90Z" fill="${color}" opacity=".8"/>
+    `;
+  }
+  if (type === "heart") {
+    return `
+      <path d="M62 72 C62 58 80 54 88 67 C96 54 114 58 114 72 C114 89 88 104 88 104 C88 104 62 89 62 72 Z" fill="${color}" opacity=".6"/>
+    `;
+  }
+  if (type === "check") {
+    return `
+      <rect x="246" y="84" width="34" height="34" rx="10" fill="${color}" opacity=".16"/>
+      <path d="M255 101 L262 108 L272 96" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    `;
+  }
+  if (type === "moon") {
+    return `<path d="M258 84 A20 20 0 1 0 273 114 A16 16 0 1 1 258 84 Z" fill="${color}" opacity=".75"/>`;
+  }
+  return "";
+}
+
+function renderProp(type, color) {
+  if (type === "megaphone") {
+    return `<g transform="translate(208 184) rotate(-12)">
+      <path d="M0 20 L26 5 L26 35 Z" fill="${color}"/>
+      <rect x="-8" y="16" width="12" height="8" rx="3" fill="#ffcc80"/>
+      <path d="M28 14 Q40 20 28 26" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`;
+  }
+  if (type === "laptop") {
+    return `<g transform="translate(202 192)">
+      <rect x="0" y="0" width="42" height="28" rx="4" fill="${color}"/>
+      <rect x="-4" y="28" width="50" height="6" rx="3" fill="#b0bec5"/>
+    </g>`;
+  }
+  if (type === "heart") {
+    return `<path d="M223 195 C223 186 234 183 239 191 C244 183 255 186 255 195 C255 206 239 216 239 216 C239 216 223 206 223 195 Z" fill="${color}"/>`;
+  }
+  if (type === "clipboard") {
+    return `<g transform="translate(210 188)">
+      <rect x="0" y="0" width="34" height="44" rx="6" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <rect x="10" y="-5" width="14" height="10" rx="4" fill="${color}"/>
+      <path d="M8 14 H26 M8 22 H26 M8 30 H20" stroke="#8a94a6" stroke-width="2" stroke-linecap="round"/>
+    </g>`;
+  }
+  if (type === "phone") {
+    return `<g transform="translate(214 188) rotate(8)">
+      <rect x="0" y="0" width="24" height="42" rx="6" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <circle cx="12" cy="34" r="2" fill="${color}"/>
+    </g>`;
+  }
+  if (type === "chart") {
+    return `<g transform="translate(208 186)">
+      <rect x="0" y="0" width="42" height="34" rx="6" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <path d="M8 24 L16 18 L24 22 L34 10" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`;
+  }
+  if (type === "coffee") {
+    return `<g transform="translate(214 196)">
+      <rect x="0" y="6" width="22" height="18" rx="4" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <path d="M22 10 H28 C31 10 32 14 32 15 C32 19 30 22 26 22 H22" fill="none" stroke="${color}" stroke-width="3"/>
+      <path d="M6 0 Q8 -4 10 0 M14 0 Q16 -4 18 0" stroke="#b08968" stroke-width="2" fill="none"/>
+    </g>`;
+  }
+  if (type === "checklist") {
+    return `<g transform="translate(210 188)">
+      <rect x="0" y="0" width="36" height="44" rx="8" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <path d="M8 13 L12 17 L17 10 M8 27 L12 31 L17 24" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M20 14 H28 M20 28 H28" stroke="#8a94a6" stroke-width="2" />
+    </g>`;
+  }
+  if (type === "notebook") {
+    return `<g transform="translate(208 188) rotate(-8)">
+      <rect x="0" y="0" width="34" height="42" rx="6" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <path d="M8 12 H26 M8 20 H24 M8 28 H20" stroke="#8a94a6" stroke-width="2"/>
+    </g>`;
+  }
+  if (type === "tablet") {
+    return `<g transform="translate(208 190)">
+      <rect x="0" y="0" width="38" height="30" rx="6" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <circle cx="31" cy="24" r="2" fill="${color}"/>
+    </g>`;
+  }
+  if (type === "headphones") {
+    return `<g transform="translate(160 106)">
+      <path d="M-22 6 C-22 -14 -10 -26 0 -26 C10 -26 22 -14 22 6" stroke="${color}" stroke-width="5" fill="none"/>
+      <rect x="-29" y="4" width="8" height="18" rx="4" fill="${color}"/>
+      <rect x="21" y="4" width="8" height="18" rx="4" fill="${color}"/>
+    </g>`;
+  }
+  if (type === "wrench") {
+    return `<g transform="translate(212 190) rotate(-24)">
+      <path d="M0 30 L24 6" stroke="${color}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M26 2 C22 2 20 6 21 9 L16 14 C12 13 8 15 6 18 C4 22 5 27 8 30 C11 33 16 34 20 32 C23 30 25 26 24 22 L29 17 C32 18 36 16 38 12 C40 8 39 3 36 0 L31 5 C29 7 27 5 26 2 Z" fill="${color}"/>
+    </g>`;
+  }
+  if (type === "plant") {
+    return `<g transform="translate(214 198)">
+      <rect x="6" y="18" width="18" height="16" rx="4" fill="#c97b63"/>
+      <path d="M16 18 V6" stroke="#4caf50" stroke-width="3"/>
+      <path d="M16 12 C8 12 6 6 10 2 C15 4 17 8 16 12Z" fill="#66bb6a"/>
+      <path d="M16 12 C24 12 26 6 22 2 C17 4 15 8 16 12Z" fill="#43a047"/>
+    </g>`;
+  }
+  if (type === "books") {
+    return `<g transform="translate(206 192)">
+      <rect x="0" y="20" width="36" height="8" rx="3" fill="#ffb703"/>
+      <rect x="2" y="10" width="34" height="8" rx="3" fill="#90caf9"/>
+      <rect x="4" y="0" width="32" height="8" rx="3" fill="${color}"/>
+    </g>`;
+  }
+  if (type === "envelope") {
+    return `<g transform="translate(210 194)">
+      <rect x="0" y="0" width="36" height="24" rx="5" fill="#fff" stroke="${color}" stroke-width="3"/>
+      <path d="M4 4 L18 14 L32 4" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`;
+  }
+  if (type === "shield") {
+    return `<g transform="translate(214 188)">
+      <path d="M16 0 L32 6 V18 C32 29 24 36 16 40 C8 36 0 29 0 18 V6 Z" fill="${color}" opacity=".85"/>
+      <path d="M16 8 V30 M8 18 H24" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    </g>`;
+  }
+  return "";
+}
+
+function copyResult() {
+  if (!latestResult) return;
+  const { code, profile } = latestResult;
+  const text = `我的互联网人设是【${code} · ${profile.name}】\n${profile.subtitle}\n来测测你到底是哪种抽象人设吧！`;
+  navigator.clipboard.writeText(text).then(() => toast("分享文案已复制")).catch(() => toast("复制失败，请手动复制"));
+}
+
+function toast(message) {
+  const el = $("toast");
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+$("startBtn").onclick = () => startTest(false);
+$("resumeBtn").onclick = () => startTest(true);
+$("restartBtn").onclick = restartAll;
+$("restartTopBtn").onclick = restartAll;
+$("copyBtn").onclick = copyResult;
+$("prevBtn").onclick = () => {
+  if (currentIndex > 0) {
+    currentIndex -= 1;
+    saveProgress();
+    renderQuestion();
+  }
+};
+$("nextBtn").onclick = () => {
+  if (answers[currentIndex] === null) return;
+  if (currentIndex < QUESTIONS.length - 1) {
+    currentIndex += 1;
+    saveProgress();
+    renderQuestion();
+  } else {
+    submitTest();
+  }
+};
+
+document.addEventListener("keydown", (e) => {
+  if (!screens.test.classList.contains("active")) return;
+  const num = Number(e.key);
+  if (num >= 1 && num <= 5) {
+    answers[currentIndex] = num - 3;
+    saveProgress();
+    renderQuestion();
+  }
+});
+
+function restartAll() {
+  clearProgress();
+  latestResult = null;
+  showScreen("home");
+}
+
+function renderHomeIllustration() {
+  $("homeIllus").innerHTML = `
+  <svg width="100%" viewBox="0 0 420 320" xmlns="http://www.w3.org/2000/svg" aria-label="首页插画">
+    <rect width="420" height="320" rx="24" fill="#F6F3FF"/>
+    <circle cx="80" cy="90" r="42" fill="#FFD8C2"/>
+    <circle cx="210" cy="82" r="38" fill="#DDE9FF"/>
+    <circle cx="320" cy="96" r="40" fill="#FFF0C8"/>
+    <rect x="42" y="132" width="76" height="112" rx="22" fill="#FF8A65"/>
+    <rect x="172" y="128" width="76" height="116" rx="22" fill="#7A6FF0"/>
+    <rect x="282" y="138" width="76" height="106" rx="22" fill="#5CC8A1"/>
+    <circle cx="80" cy="82" r="24" fill="#F2C7A5"/>
+    <circle cx="210" cy="76" r="24" fill="#F2C7A5"/>
+    <circle cx="320" cy="88" r="24" fill="#F2C7A5"/>
+    <path d="M56 82 Q58 56 80 56 Q102 56 104 82" fill="#3E2C2C"/>
+    <path d="M186 76 Q188 50 210 50 Q232 50 234 76" fill="#2D3250"/>
+    <path d="M296 88 Q298 60 320 60 Q342 60 344 88" fill="#4E5D52"/>
+    <path d="M62 245 C62 224 98 224 98 245" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M192 247 C192 226 228 226 228 247" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M302 247 C302 228 338 228 338 247" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <rect x="146" y="242" width="128" height="40" rx="20" fill="#fff"/>
+    <text x="210" y="267" text-anchor="middle" font-size="16" font-weight="700" fill="#55637f">16 种抽象人设</text>
+  </svg>`;
+}
+
+updateResume();
+renderHomeIllustration();
+</script>
 </body>
 </html>
-'''
-
-path = Path("/mnt/data/orbit16_personality_test.html")
-path.write_text(html, encoding="utf-8")
-print(f"Created: {path} ({path.stat().st_size} bytes)")
