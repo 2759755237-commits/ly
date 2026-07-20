@@ -1,79 +1,1759 @@
-<!DOCTYPE html>
+from pathlib import Path
+
+html = r'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="秘密小屋">
-    <title>小老母猪の秘密小屋</title>
-    <style>
-        body { font-family: 'PingFang SC', sans-serif; background-color: #fff0f5; margin: 0; padding: 20px; color: #555; text-align: center; }
-        h1 { color: #ff7675; font-size: 24px; margin-bottom: 25px;}
-        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255, 118, 117, 0.1); }
-        button { background-color: #ff7675; color: white; border: none; padding: 12px 24px; border-radius: 30px; font-size: 16px; font-weight: bold; width: 80%; margin-top: 10px; cursor: pointer;}
-        button:active { background-color: #d63031; transform: scale(0.98); }
-        .mood-btn { background-color: #ffeaa7; color: #d63031; width: auto; padding: 10px 15px; margin: 5px; font-size: 14px;}
-        .result-text { font-size: 22px; font-weight: bold; color: #d63031; margin-top: 15px; min-height: 30px; }
-        .quote { font-size: 14px; color: #636e72; font-style: italic; margin-top: 10px;}
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="星轨人格 Orbit-16：一个原创、有趣、可分享的四维人格测试。" />
+  <title>星轨人格 Orbit-16</title>
+  <style>
+    :root {
+      --bg: #070b18;
+      --panel: rgba(14, 20, 42, 0.78);
+      --panel-strong: rgba(18, 26, 56, 0.96);
+      --text: #f4f6ff;
+      --muted: #a8b0cd;
+      --line: rgba(255,255,255,.10);
+      --purple: #8b5cf6;
+      --cyan: #22d3ee;
+      --pink: #fb7185;
+      --yellow: #facc15;
+      --green: #34d399;
+      --shadow: 0 24px 80px rgba(0,0,0,.42);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(139,92,246,.22), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(34,211,238,.15), transparent 24%),
+        radial-gradient(circle at 72% 80%, rgba(251,113,133,.13), transparent 26%),
+        linear-gradient(135deg, #050713 0%, #0b1023 48%, #080b17 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .42;
+      background-image:
+        radial-gradient(circle at 20% 30%, #fff 0 1px, transparent 1.5px),
+        radial-gradient(circle at 80% 40%, #fff 0 1px, transparent 1.5px),
+        radial-gradient(circle at 50% 70%, #fff 0 1px, transparent 1.5px),
+        radial-gradient(circle at 65% 20%, #fff 0 1px, transparent 1.5px);
+      background-size: 180px 180px, 230px 230px, 280px 280px, 330px 330px;
+      animation: drift 24s linear infinite;
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0); }
+      to { transform: translateY(-90px); }
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 26px 0 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      box-shadow: 0 10px 30px rgba(139,92,246,.35);
+      font-size: 22px;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      margin-top: 2px;
+      letter-spacing: .08em;
+    }
+
+    .ghost-btn {
+      padding: 11px 16px;
+      border-radius: 999px;
+      color: var(--text);
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      transition: .2s ease;
+    }
+
+    .ghost-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.10);
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeUp .5s ease both; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: var(--radius);
+    }
+
+    .hero {
+      padding: clamp(28px, 5vw, 68px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 390px;
+      height: 390px;
+      right: -110px;
+      top: -140px;
+      border-radius: 50%;
+      background: conic-gradient(from 20deg, var(--purple), var(--cyan), var(--pink), var(--purple));
+      filter: blur(14px);
+      opacity: .22;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #dfe6ff;
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--line);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(44px, 8vw, 88px);
+      line-height: .98;
+      margin: 0;
+      letter-spacing: -.055em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #c4b5fd 0%, #67e8f9 42%, #fda4af 82%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 720px;
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.85;
+      margin: 24px 0 0;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .primary-btn {
+      min-width: 180px;
+      padding: 16px 24px;
+      border-radius: 16px;
+      color: white;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--purple), #6d5dfc 48%, var(--cyan));
+      box-shadow: 0 16px 34px rgba(109,93,252,.34);
+      transition: .22s ease;
+    }
+
+    .primary-btn:hover { transform: translateY(-3px) scale(1.01); }
+    .primary-btn:active { transform: translateY(0) scale(.99); }
+
+    .secondary-btn {
+      padding: 16px 22px;
+      border-radius: 16px;
+      color: var(--text);
+      font-weight: 800;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      transition: .2s ease;
+    }
+
+    .secondary-btn:hover { background: rgba(255,255,255,.11); }
+
+    .stats {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--line);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .stat span { color: var(--muted); font-size: 13px; }
+
+    .axis-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .axis-card {
+      padding: 20px;
+      min-height: 170px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .axis-card::before {
+      content: "";
+      position: absolute;
+      inset: auto -30px -60px auto;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--axis-color);
+      opacity: .12;
+      filter: blur(4px);
+    }
+
+    .axis-card .icon {
+      font-size: 28px;
+      margin-bottom: 18px;
+    }
+
+    .axis-card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .axis-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .section-title {
+      margin: 38px 0 16px;
+      font-size: 26px;
+    }
+
+    .notice {
+      padding: 18px 20px;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    /* Test */
+    .test-shell {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .progress-wrap {
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+
+    .progress-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .progress-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--purple), var(--cyan), var(--pink));
+      transition: width .35s ease;
+    }
+
+    .question-card {
+      padding: clamp(24px, 5vw, 46px);
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .question-kicker {
+      color: #c4b5fd;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .question-text {
+      font-size: clamp(26px, 4vw, 38px);
+      line-height: 1.38;
+      margin: 14px 0 28px;
+      letter-spacing: -.02em;
+    }
+
+    .options {
+      display: grid;
+      gap: 12px;
+    }
+
+    .option {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      text-align: left;
+      color: var(--text);
+      border-radius: 16px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--line);
+      transition: .18s ease;
+    }
+
+    .option:hover {
+      transform: translateX(4px);
+      background: rgba(255,255,255,.085);
+      border-color: rgba(139,92,246,.48);
+    }
+
+    .option.selected {
+      background: linear-gradient(135deg, rgba(139,92,246,.24), rgba(34,211,238,.14));
+      border-color: rgba(103,232,249,.65);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    .option-key {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(255,255,255,.08);
+      color: #dfe6ff;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .option.selected .option-key {
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      color: #fff;
+    }
+
+    .test-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 30px;
+    }
+
+    .nav-btn {
+      padding: 13px 18px;
+      border-radius: 14px;
+      color: var(--text);
+      font-weight: 800;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+    }
+
+    .nav-btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    .save-tip {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 14px;
+    }
+
+    /* Loading */
+    .loading-card {
+      max-width: 760px;
+      margin: 70px auto;
+      padding: 54px 28px;
+      text-align: center;
+    }
+
+    .orbit-loader {
+      width: 110px;
+      height: 110px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 50%;
+      margin: 0 auto 28px;
+      position: relative;
+      animation: spin 2.4s linear infinite;
+    }
+
+    .orbit-loader::before,
+    .orbit-loader::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .orbit-loader::before {
+      width: 20px;
+      height: 20px;
+      background: var(--cyan);
+      top: 6px;
+      left: 44px;
+      box-shadow: 0 0 28px rgba(34,211,238,.8);
+    }
+
+    .orbit-loader::after {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      inset: 37px;
+      box-shadow: 0 0 34px rgba(139,92,246,.65);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-card h2 { font-size: 30px; margin: 0 0 12px; }
+    .loading-card p { color: var(--muted); margin: 0; min-height: 28px; }
+
+    /* Result */
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+    }
+
+    .result-main,
+    .result-side,
+    .result-section {
+      padding: clamp(24px, 4vw, 40px);
+    }
+
+    .type-code {
+      display: inline-flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .code-char {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      font-size: 22px;
+      font-weight: 950;
+      background: linear-gradient(135deg, rgba(139,92,246,.9), rgba(34,211,238,.82));
+      box-shadow: 0 12px 28px rgba(139,92,246,.26);
+    }
+
+    .result-main h2 {
+      font-size: clamp(34px, 5vw, 58px);
+      margin: 0;
+      line-height: 1.06;
+      letter-spacing: -.045em;
+    }
+
+    .subtitle {
+      color: #d8def8;
+      font-size: 18px;
+      margin: 14px 0 20px;
+    }
+
+    .summary {
+      color: var(--muted);
+      line-height: 1.9;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .keywords {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .keyword {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--line);
+      color: #e7eafd;
+      font-size: 13px;
+    }
+
+    .egg {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(250,204,21,.32);
+      background: linear-gradient(135deg, rgba(250,204,21,.12), rgba(251,113,133,.08));
+    }
+
+    .egg strong { display: block; margin-bottom: 6px; }
+    .egg p { color: #ddd6b8; margin: 0; line-height: 1.6; font-size: 14px; }
+
+    .radar-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+    }
+
+    #radarCanvas { max-width: 100%; height: auto; }
+
+    .dimension-list { display: grid; gap: 18px; }
+
+    .dimension-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .dimension-head span:last-child { color: #c4b5fd; font-weight: 800; }
+
+    .dimension-track {
+      height: 11px;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .dimension-bar {
+      height: 100%;
+      width: 50%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      transition: width .8s ease;
+    }
+
+    .dimension-poles {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 7px;
+    }
+
+    .result-section {
+      margin-top: 18px;
+    }
+
+    .result-section h3 {
+      margin: 0 0 18px;
+      font-size: 23px;
+    }
+
+    .cards-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .mini-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--line);
+    }
+
+    .mini-card .mini-icon { font-size: 26px; margin-bottom: 12px; }
+    .mini-card h4 { margin: 0 0 8px; font-size: 16px; }
+    .mini-card p { margin: 0; color: var(--muted); line-height: 1.7; font-size: 14px; }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 15px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--line);
+      color: #dde2f7;
+      line-height: 1.65;
+    }
+
+    .list-item b {
+      width: 26px;
+      height: 26px;
+      flex: 0 0 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(139,92,246,.25);
+      color: #ddd6fe;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 28px;
+      line-height: 1.7;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translate(-50%, 20px);
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: rgba(13,18,38,.96);
+      border: 1px solid var(--line);
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s ease;
+      z-index: 50;
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 880px) {
+      .axis-grid { grid-template-columns: repeat(2, 1fr); }
+      .result-grid { grid-template-columns: 1fr; }
+      .cards-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .app { width: min(100% - 18px, 1120px); padding-top: 14px; }
+      .topbar { margin-bottom: 18px; }
+      .brand small { display: none; }
+      .hero { border-radius: 22px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .axis-grid { grid-template-columns: 1fr; }
+      .question-card { min-height: 610px; padding: 24px 18px; }
+      .question-text { font-size: 26px; }
+      .option { padding: 14px 13px; }
+      .code-char { width: 46px; height: 46px; border-radius: 14px; }
+      .result-main, .result-side, .result-section { padding: 22px 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">✦</div>
+        <div>
+          星轨人格 Orbit-16
+          <small>ORIGINAL PERSONALITY SPECTRUM</small>
+        </div>
+      </div>
+      <button class="ghost-btn" id="topRestartBtn" type="button">重新校准</button>
+    </header>
 
-    <h1>🐷 小老母猪の秘密小屋 🐷</h1>
+    <!-- 首页 -->
+    <section class="screen active" id="homeScreen">
+      <div class="hero glass">
+        <span class="badge">🪐 原创四维人格体系 · 不复制 MBTI / SBTI</span>
+        <h1>你的性格，不是标签，<br><span class="gradient-text">是一条正在发光的轨道。</span></h1>
+        <p>
+          32 个生活化情境，测出你的能量场、行动节奏、观察镜头和内在罗盘。
+          最终生成 16 种原创星轨人格，并可能解锁一个只属于你的隐藏彩蛋。
+        </p>
 
-    <div class="card">
-        <div style="font-size: 14px; color: #b2bec3;">今日天气与运势</div>
-        <div id="weatherDisplay" style="font-size: 18px; margin: 15px 0;">读取中...</div>
-        <button onclick="updateWeather()" style="width: auto; padding: 8px 16px; font-size: 14px;">刷新天气</button>
-    </div>
+        <div class="hero-actions">
+          <button class="primary-btn" id="startBtn" type="button">开始进入轨道 →</button>
+          <button class="secondary-btn" id="resumeBtn" type="button" style="display:none;">继续上次测试</button>
+        </div>
 
-    <div class="card">
-        <h2>今天吃什么？</h2>
-        <button onclick="pickFood()">抽取美食</button>
-        <div id="foodDisplay" class="result-text"></div>
-    </div>
+        <div class="stats">
+          <div class="stat"><strong>32</strong><span>道情境题</span></div>
+          <div class="stat"><strong>4D</strong><span>原创维度</span></div>
+          <div class="stat"><strong>16</strong><span>种星轨人格</span></div>
+          <div class="stat"><strong>5–8</strong><span>分钟完成</span></div>
+        </div>
+      </div>
 
-    <div class="card">
-        <div style="margin-bottom: 10px;">今天心情怎么样？</div>
-        <button class="mood-btn" onclick="setMood('超开心！保持住！')">超开心</button>
-        <button class="mood-btn" onclick="setMood('平平淡淡才是真~')">一般般</button>
-        <button class="mood-btn" onclick="setMood('抱抱你，好好休息一下吧')">好累哦</button>
-        <div id="moodDisplay" style="margin-top: 15px; color: #fdcb6e; font-weight: bold;"></div>
-    </div>
+      <h2 class="section-title">四条星轨，决定你如何穿过世界</h2>
+      <div class="axis-grid">
+        <article class="axis-card glass" style="--axis-color:#8b5cf6">
+          <div class="icon">☀️ / 🌙</div>
+          <h3>能量场：光 L ↔ 潜 D</h3>
+          <p>你更容易在人群中点亮自己，还是在独处中重新蓄满电量？</p>
+        </article>
+        <article class="axis-card glass" style="--axis-color:#22d3ee">
+          <div class="icon">⚡ / 🧱</div>
+          <h3>行动节奏：跃 J ↔ 筑 B</h3>
+          <p>你喜欢先跳进去边走边看，还是搭好结构之后稳稳推进？</p>
+        </article>
+        <article class="axis-card glass" style="--axis-color:#fb7185">
+          <div class="icon">🔭 / 🧭</div>
+          <h3>观察镜头：幻 A ↔ 迹 T</h3>
+          <p>你先看见未来的可能性，还是先抓住眼前可验证的线索？</p>
+        </article>
+        <article class="axis-card glass" style="--axis-color:#facc15">
+          <div class="icon">💞 / ⚖️</div>
+          <h3>内在罗盘：共 C ↔ 衡 R</h3>
+          <p>你做决定时更在意人的感受，还是系统的逻辑与一致性？</p>
+        </article>
+      </div>
 
-    <div class="quote" id="quoteDisplay"></div>
+      <div class="notice glass" style="margin-top:18px;">
+        <strong style="color:#fff;">说明：</strong>
+        本测试用于娱乐、自我观察和交流，不属于心理诊断工具，也不应用于医疗、招聘、升学或其他高风险判断。
+      </div>
+    </section>
 
-    <script>
-        // 你可以在这里随时修改你的数据源
-        const weathers = ['☀️ 晴朗，适合出去撒欢', '☁️ 多云，微风不燥', '🌧️ 下雨啦，适合在家睡大觉'];
-        const foods = ['麻辣火锅', '滋滋烤肉', '快乐臭臭螺蛳粉', '健康轻食沙拉', '街头麻辣烫', '罪恶炸鸡汉堡', '东北大乱炖', '今天喝西北风'];
-        const quotes = ['今天也要元气满满哦！', '吃饱了才有力气减肥！', '做一只无忧无虑的快乐小猪！', '没有什么是一顿火锅解决不了的！'];
+    <!-- 答题页 -->
+    <section class="screen" id="testScreen">
+      <div class="test-shell">
+        <div class="progress-wrap glass">
+          <div class="progress-meta">
+            <span id="progressText">第 1 / 32 题</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
 
-        function getRandomItem(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
+        <article class="question-card glass">
+          <div class="question-kicker" id="questionKicker">轨道校准 01</div>
+          <h2 class="question-text" id="questionText"></h2>
+          <div class="options" id="optionsContainer"></div>
+
+          <div class="test-nav">
+            <button class="nav-btn" id="prevBtn" type="button">← 上一题</button>
+            <button class="primary-btn" id="nextBtn" type="button" disabled>下一题 →</button>
+          </div>
+          <div class="save-tip">答案会自动保存在当前浏览器中 · 也可以按数字键 1–5 快速作答</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 计算页 -->
+    <section class="screen" id="loadingScreen">
+      <div class="loading-card glass">
+        <div class="orbit-loader"></div>
+        <h2>正在绘制你的星轨</h2>
+        <p id="loadingText">读取你的社交电量……</p>
+      </div>
+    </section>
+
+    <!-- 结果页 -->
+    <section class="screen" id="resultScreen">
+      <div class="result-grid">
+        <article class="result-main glass">
+          <div class="type-code" id="typeCode"></div>
+          <h2 id="typeName"></h2>
+          <div class="subtitle" id="typeSubtitle"></div>
+          <p class="summary" id="typeSummary"></p>
+          <div class="keywords" id="keywords"></div>
+          <div class="egg" id="eggBox">
+            <strong id="eggTitle"></strong>
+            <p id="eggText"></p>
+          </div>
+        </article>
+
+        <aside class="result-side glass">
+          <div class="radar-wrap">
+            <canvas id="radarCanvas" width="360" height="300" aria-label="人格雷达图"></canvas>
+          </div>
+          <div class="dimension-list" id="dimensionList"></div>
+        </aside>
+      </div>
+
+      <section class="result-section glass">
+        <h3>你在现实世界中的运行方式</h3>
+        <div class="cards-3">
+          <article class="mini-card">
+            <div class="mini-icon">👥</div>
+            <h4>在人群里</h4>
+            <p id="socialText"></p>
+          </article>
+          <article class="mini-card">
+            <div class="mini-icon">🛠️</div>
+            <h4>做事情时</h4>
+            <p id="workText"></p>
+          </article>
+          <article class="mini-card">
+            <div class="mini-icon">🌱</div>
+            <h4>成长提示</h4>
+            <p id="growthText"></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="result-section glass">
+        <h3>你的优势模块</h3>
+        <div class="list" id="strengthList"></div>
+      </section>
+
+      <section class="result-section glass">
+        <h3>可能偶尔卡住你的地方</h3>
+        <div class="list" id="riskList"></div>
+      </section>
+
+      <div class="result-actions">
+        <button class="primary-btn" id="downloadBtn" type="button">下载结果海报</button>
+        <button class="secondary-btn" id="copyBtn" type="button">复制分享文案</button>
+        <button class="secondary-btn" id="restartBtn" type="button">重新测试</button>
+      </div>
+    </section>
+
+    <footer>
+      星轨人格 Orbit-16 为原创娱乐测试。人格结果不是永久定论，你在不同阶段也可能走上新的轨道。
+    </footer>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    "use strict";
+
+    // =========================
+    // 1. 原创四维体系
+    // =========================
+    const AXES = {
+      energy: {
+        name: "能量场",
+        lowCode: "D",
+        highCode: "L",
+        lowLabel: "潜能量",
+        highLabel: "光能量"
+      },
+      rhythm: {
+        name: "行动节奏",
+        lowCode: "B",
+        highCode: "J",
+        lowLabel: "筑模式",
+        highLabel: "跃模式"
+      },
+      lens: {
+        name: "观察镜头",
+        lowCode: "T",
+        highCode: "A",
+        lowLabel: "迹视角",
+        highLabel: "幻视角"
+      },
+      compass: {
+        name: "内在罗盘",
+        lowCode: "R",
+        highCode: "C",
+        lowLabel: "衡判断",
+        highLabel: "共判断"
+      }
+    };
+
+    const OPTION_LABELS = [
+      "完全不像我",
+      "比较不像我",
+      "看情况 / 一半一半",
+      "比较像我",
+      "非常像我"
+    ];
+
+    // score: -2 ~ 2；sign=-1 表示反向题
+    const QUESTIONS = [
+      { axis:"energy", sign: 1, text:"进入一个几乎没有熟人的聚会，我通常能很快找到可以聊天的人。" },
+      { axis:"energy", sign:-1, text:"连续和很多人相处后，我最想做的事是独自安静一会儿。" },
+      { axis:"energy", sign: 1, text:"遇到有趣的想法，我会忍不住立刻找人分享。" },
+      { axis:"energy", sign:-1, text:"比起热闹现场，我更喜欢在角落里先观察整个空间。" },
+      { axis:"energy", sign: 1, text:"团队冷场时，我常常会自然地把气氛重新点起来。" },
+      { axis:"energy", sign:-1, text:"我更习惯先在心里整理好，再把真实想法说出来。" },
+      { axis:"energy", sign: 1, text:"认识新朋友对我来说，通常比想象中轻松。" },
+      { axis:"energy", sign:-1, text:"没有必要时，我不会主动进入别人的注意中心。" },
+
+      { axis:"rhythm", sign: 1, text:"面对新任务，我更愿意先动起来，再边做边修正。" },
+      { axis:"rhythm", sign:-1, text:"开始一件重要事情前，我希望先把步骤和时间安排清楚。" },
+      { axis:"rhythm", sign: 1, text:"临时改变计划常常让我觉得有点刺激，而不是麻烦。" },
+      { axis:"rhythm", sign:-1, text:"如果桌面、文件和待办都很混乱，我会明显不舒服。" },
+      { axis:"rhythm", sign: 1, text:"我经常在最后时刻爆发出惊人的执行力。" },
+      { axis:"rhythm", sign:-1, text:"我喜欢把大目标拆成一串能逐个完成的小节点。" },
+      { axis:"rhythm", sign: 1, text:"即使信息还不完整，我也可以先做一个可用版本。" },
+      { axis:"rhythm", sign:-1, text:"比起灵感突然降临，我更相信稳定重复的节奏。" },
+
+      { axis:"lens", sign: 1, text:"看到一件普通的小事，我常常会联想到更大的故事或可能性。" },
+      { axis:"lens", sign:-1, text:"判断一件事时，我更相信亲眼看到和实际验证过的信息。" },
+      { axis:"lens", sign: 1, text:"我会因为一个尚未成形的点子兴奋很久。" },
+      { axis:"lens", sign:-1, text:"抽象概念如果没有具体例子，我会觉得它有点飘。" },
+      { axis:"lens", sign: 1, text:"我很容易想象一件事在未来可能发展成什么样。" },
+      { axis:"lens", sign:-1, text:"比起“也许可以”，我更关心“现在到底能不能做到”。" },
+      { axis:"lens", sign: 1, text:"我喜欢研究隐藏含义、象征和事物背后的关联。" },
+      { axis:"lens", sign:-1, text:"解决问题时，我通常先从最直接、最现实的线索入手。" },
+
+      { axis:"compass", sign: 1, text:"做决定时，我会认真考虑这件事会让相关的人有什么感受。" },
+      { axis:"compass", sign:-1, text:"即使某个结论不太讨喜，只要逻辑成立，我也愿意坚持。" },
+      { axis:"compass", sign: 1, text:"朋友向我倾诉时，我会先理解情绪，而不是马上给解决方案。" },
+      { axis:"compass", sign:-1, text:"发生争论时，我更关注谁的论据更完整，而不是谁更委屈。" },
+      { axis:"compass", sign: 1, text:"我容易察觉别人没有直接说出口的情绪变化。" },
+      { axis:"compass", sign:-1, text:"规则如果总因为个人情况被打破，我会觉得系统失去公平。" },
+      { axis:"compass", sign: 1, text:"我希望自己的选择不仅有效，也尽量让人舒服。" },
+      { axis:"compass", sign:-1, text:"需要取舍时，我能够把个人好恶先放到一边。" }
+    ];
+
+    // =========================
+    // 2. 16 种原创人格
+    // =========================
+    const PROFILES = {
+      LJAC: {
+        name:"光焰漫游者",
+        subtitle:"你不是走进房间，你是给房间通了电。",
+        summary:"你靠互动获得能量，喜欢快速进入现场，也常常把新想法变成一场说走就走的实验。你对人的情绪非常敏感，行动中带着感染力。别人可能觉得你像一束移动的聚光灯，而你真正擅长的是让陌生人迅速产生“我们是一队”的感觉。",
+        keywords:["感染力","行动直觉","共情表达","创意现场"],
+        social:"你容易成为连接不同人的那一位。热情是真实的，但要注意别把自己的社交电量当成无限续航。",
+        work:"你适合需要创意、沟通和快速试错的环境。最强状态往往出现在“边行动边召集伙伴”的项目里。",
+        growth:"在每次冲出去之前，给自己十分钟确认优先级。你的速度很珍贵，方向感会让它更强。",
+        strengths:["能够快速点亮团队气氛","擅长把抽象想法讲得有画面","面对变化时反应灵活"],
+        risks:["容易同时点开太多任务","可能因为照顾气氛而忽略自己的疲惫","灵感很快，收尾速度偶尔跟不上"]
+      },
+      LJAR: {
+        name:"闪电策展人",
+        subtitle:"脑内开着十个窗口，还能把它们排成展览。",
+        summary:"你外向、快速、好奇，也习惯用逻辑筛选想法。你喜欢把新鲜概念带到现实里测试，善于发现趋势、连接资源，并迅速判断什么值得继续。你不是单纯追求热闹，而是在热闹里寻找结构和突破口。",
+        keywords:["趋势雷达","快速判断","资源连接","锋利表达"],
+        social:"你喜欢有内容、有观点的交流。无聊寒暄可能让你掉电，但一场高密度讨论能让你瞬间满格。",
+        work:"你适合创新项目、内容策划、产品探索和需要快速决策的场景。",
+        growth:"别让“我已经看懂了”替代真正的倾听。慢半拍，有时会得到更完整的信息。",
+        strengths:["擅长识别机会与趋势","表达清晰，能快速推动讨论","能把分散信息组合成新方案"],
+        risks:["可能过早否定还没成熟的想法","容易对节奏慢的人失去耐心","启动很多，复盘不够"]
+      },
+      LJTC: {
+        name:"热场玩家",
+        subtitle:"哪里有人，哪里就可能被你变成主场。",
+        summary:"你重视现实体验，喜欢直接参与，也很会读懂现场氛围。你通常不是靠长篇理论影响别人，而是靠真实行动、及时反应和让人舒服的互动。你是那种能在尴尬时递出台阶，也能在混乱时先把事情做起来的人。",
+        keywords:["现场感","亲和力","及时反应","务实热情"],
+        social:"你很会察言观色，也愿意主动照顾群体体验。别忘了，偶尔不负责气氛也完全没问题。",
+        work:"适合服务、活动、运营、销售、执行和任何需要“人到现场就能解决问题”的领域。",
+        growth:"把经验沉淀成方法，你的临场能力就会从“好用”升级为“可复制”。",
+        strengths:["能够快速适应陌生环境","擅长解决眼前真实问题","让别人感到自然、被接住"],
+        risks:["可能忽视长期规划","容易为了现场和谐而过度答应","对抽象长期任务耐心不足"]
+      },
+      LJTR: {
+        name:"现场指挥官",
+        subtitle:"事情一乱，你的大脑反而开始清晰。",
+        summary:"你喜欢直接进入问题，快速抓住现实条件并做出判断。你不太迷恋复杂仪式，真正关心的是“现在怎么推进”。你的外向并不一定是爱热闹，而是习惯把信息、资源和人迅速调动起来。",
+        keywords:["决断力","现实推进","临场组织","结果导向"],
+        social:"你直率、清楚，别人通常知道该怎么和你合作。表达结论时多补一句原因，会减少不必要的摩擦。",
+        work:"适合管理、应急、运营、执行、谈判和需要快速收敛方案的任务。",
+        growth:"不是所有问题都需要马上解决。有些情绪先被看见，效率反而会更高。",
+        strengths:["在混乱中快速建立秩序","敢于承担决策压力","对资源和现实限制敏感"],
+        risks:["语气可能比自己意识到的更强硬","容易低估情绪成本","可能把休息也变成待办事项"]
+      },
+      LBAC: {
+        name:"星港召集者",
+        subtitle:"你让热情有归宿，也让理想真的靠岸。",
+        summary:"你既喜欢与人连接，也善于把愿景变成稳定结构。你能看见未来，并愿意为团队设计路线、规则和节奏。你的温暖不是松散的，而是带着组织力：既会鼓励人，也会认真把事情落地。",
+        keywords:["愿景组织","团队凝聚","长期主义","温暖领导"],
+        social:"你很容易成为群体中的核心连接点。注意别把所有人的状态都背在自己身上。",
+        work:"适合团队管理、教育、品牌、社群、项目统筹和长期建设。",
+        growth:"允许别人用不同于你的方式完成任务。真正的组织力也包括留白。",
+        strengths:["能把共同愿景说得清楚","擅长长期维护关系与节奏","兼顾人心和项目进度"],
+        risks:["容易承担过多责任","对团队失衡非常敏感","可能因为追求整体而忽略个人边界"]
+      },
+      LBAR: {
+        name:"未来架构师",
+        subtitle:"你不只想赢一局，你在设计下一张地图。",
+        summary:"你外向但并不浮躁，擅长把远期目标、资源配置和执行路径放在同一张图里。你喜欢有逻辑的愿景，也有能力把复杂项目讲到大家愿意一起做。相比即时掌声，你更在意系统是否真的有效。",
+        keywords:["战略视野","结构表达","系统推进","目标感"],
+        social:"你欣赏有想法、能独立思考的人。交流时多保留一些探索空间，会让合作更有创造性。",
+        work:"适合战略、创业、产品、管理、咨询与复杂项目设计。",
+        growth:"别让未来的宏大结构遮住眼前的微小反馈。它们往往是系统最早的报警器。",
+        strengths:["能构建清晰的长期路线","擅长统筹复杂资源","表达有说服力并能带动执行"],
+        risks:["可能对低效和模糊缺乏耐心","容易把关系问题系统化处理","休息时仍在优化人生"]
+      },
+      LBTC: {
+        name:"温暖组织者",
+        subtitle:"你把照顾别人，做成了一种稳定能力。",
+        summary:"你擅长维护真实生活中的秩序，也在意每个人是否被照顾到。你通常可靠、细致、愿意承担，并会自然记住重要的小事。你的力量不一定高调，但常常让团队和关系在不知不觉中变得更稳。",
+        keywords:["可靠","细节照顾","稳定连接","务实温柔"],
+        social:"你愿意付出，也容易成为别人信赖的对象。请把自己的需要也放进安排表里。",
+        work:"适合行政、教育、服务、运营、护理、协调和需要耐心维护的工作。",
+        growth:"学会把“我来做”改成“我们怎么分工”。被支持并不等于不可靠。",
+        strengths:["细致观察并记住实际需求","能够长期维持稳定关系","做事有责任心和连续性"],
+        risks:["可能难以拒绝请求","容易因为别人不守约而受伤","倾向把疲惫藏到最后"]
+      },
+      LBTR: {
+        name:"旗舰推进者",
+        subtitle:"你最安心的声音，是项目按节点向前走。",
+        summary:"你擅长组织人、资源和时间，也重视现实结果。你讲话直接，行动稳定，通常能承担别人不愿意承担的复杂责任。你的安全感来自清晰、可控和完成度，而不是模糊的可能性。",
+        keywords:["执行管理","责任感","秩序","现实判断"],
+        social:"你重承诺，也看重可靠。给他人一些解释和试错空间，会让关系更有弹性。",
+        work:"适合管理、工程、行政、运营、财务、流程设计及大型项目推进。",
+        growth:"偶尔允许计划被更好的信息修改。调整路线不是失控，而是升级导航。",
+        strengths:["能够持续推进复杂任务","对规则、成本和风险敏感","在团队中提供稳定预期"],
+        risks:["可能把控制感等同于安全感","不易表达脆弱和不确定","对临时变化容忍度较低"]
+      },
+      DJAC: {
+        name:"月面造梦师",
+        subtitle:"你看起来安静，脑内却正在建一整个宇宙。",
+        summary:"你需要独处恢复能量，却拥有活跃、跳跃而充满情感的想象力。你常常先在内部形成一个世界，再选择合适的方式让它出现。你对细微情绪和象征十分敏感，创作、表达和深度关系都可能成为你的能量出口。",
+        keywords:["想象力","深度共情","自由创作","内在宇宙"],
+        social:"你不追求认识很多人，但一旦遇到对频的人，会愿意分享非常丰富的内在世界。",
+        work:"适合创作、设计、写作、研究、影像和需要个人空间的创新工作。",
+        growth:"把灵感放进一个小而固定的容器，比如每天完成二十分钟。宇宙也需要入口。",
+        strengths:["感受细腻，想象丰富","能从细节中发现独特意义","在深度交流中非常真诚"],
+        risks:["可能长时间停留在想象阶段","容易被外界情绪消耗","对现实琐事的耐心不稳定"]
+      },
+      DJAR: {
+        name:"独行实验家",
+        subtitle:"你不急着解释自己，先看看这套世界规则能不能被改写。",
+        summary:"你独立、好奇、喜欢用自己的方式试验新思路。你不一定热衷表达，但常常在内部快速重组信息，寻找更聪明的解法。你尊重逻辑，也不迷信旧规则；真正能打动你的，是一个既新鲜又自洽的系统。",
+        keywords:["独立思考","概念实验","逻辑创新","低调锋利"],
+        social:"你需要高质量而非高频率的交流。过度寒暄会让你掉电，真正有内容的讨论则会让你兴奋。",
+        work:"适合技术、研究、产品原型、策略、创意开发和复杂问题求解。",
+        growth:"让别人更早看到你的半成品。共享过程并不会削弱独立，反而可能加速突破。",
+        strengths:["能跳出既有框架思考","擅长发现系统漏洞与新路径","独立学习能力强"],
+        risks:["可能忽略沟通带来的协同价值","想法切换太快，落地不足","容易被重复流程消耗"]
+      },
+      DJTC: {
+        name:"安静共鸣者",
+        subtitle:"你不一定说很多，但常常听见别人没说出口的那句。",
+        summary:"你安静、敏感、现实感强，习惯通过细节理解人。你不会轻易把自己推到中心，却能在真实关系中提供稳定而细腻的支持。你更相信持续的行动，而不是高调的承诺。",
+        keywords:["细腻观察","安静支持","真实感","关系耐心"],
+        social:"你珍惜少数稳定关系，也容易成为别人愿意倾诉的人。记得留出不被打扰的恢复时间。",
+        work:"适合照护、设计、编辑、教育、客户支持以及需要耐心和细节感的工作。",
+        growth:"不要总等到“完全确定”才表达需求。小声说出来，也比一直猜更轻松。",
+        strengths:["能发现细微情绪变化","做事温和但有持续性","对现实需求具有敏锐感"],
+        risks:["容易把不满压在心里","可能过度适应别人","面对冲突时倾向退让"]
+      },
+      DJTR: {
+        name:"冷静解谜者",
+        subtitle:"别人看到麻烦，你看到一组尚未排序的线索。",
+        summary:"你偏好独立空间，行动灵活，并且擅长从现实线索中快速定位问题。你不爱不必要的讨论，更喜欢直接测试、拆解和修复。压力越集中，你反而越可能进入专注而清醒的状态。",
+        keywords:["问题拆解","冷静实操","独立反应","技术直觉"],
+        social:"你重视直接、可信和不过度打扰的关系。适度解释自己的沉默，会让别人更容易理解你。",
+        work:"适合技术、维修、工程、分析、应急处理和需要独立判断的岗位。",
+        growth:"不是所有情绪都能像故障一样排查。先陪伴，再修复，有时更有效。",
+        strengths:["面对突发问题保持冷静","善于通过实践快速学习","能够抓住最关键的现实线索"],
+        risks:["可能显得过于疏离","容易厌烦繁琐说明","长期规划和持续协作需要额外投入"]
+      },
+      DBAC: {
+        name:"深海守望者",
+        subtitle:"你把很远的未来，安静地放进今天的每一步。",
+        summary:"你拥有深度想象与情感洞察，也愿意为重要的人和理念建立稳定秩序。你不需要大量外界反馈，反而常在独处中形成清晰而长远的方向。你的温柔带着原则，你的理想也带着耐心。",
+        keywords:["深度愿景","安静坚持","意义感","温柔原则"],
+        social:"你倾向建立少数深厚关系。对方一旦进入你的信任范围，通常会感受到非常稳定的支持。",
+        work:"适合研究、写作、教育、心理支持、公益、策略与长期内容建设。",
+        growth:"别把所有答案都留到完全成熟之后。让可信的人参与早期过程，会减少孤独负担。",
+        strengths:["能长期守护重要目标","对人的深层动机有洞察","价值观稳定且有耐心"],
+        risks:["容易独自承担过多情绪","理想与现实冲突时消耗较大","可能不善于及时寻求帮助"]
+      },
+      DBAR: {
+        name:"星图工程师",
+        subtitle:"你安静地画图，然后让复杂世界开始有坐标。",
+        summary:"你独立、理性、长期导向，擅长把复杂信息整理成可执行结构。你更信任深思后的判断，而不是现场气氛。你不急着获得掌声，只在意系统是否准确、稳定，并能经得起时间检验。",
+        keywords:["系统思维","长期规划","独立判断","结构洞察"],
+        social:"你需要尊重边界、言之有物的关系。偶尔主动表达欣赏，会让重要的人更有安全感。",
+        work:"适合架构、研究、数据、工程、策略、金融和复杂系统设计。",
+        growth:"让方案先以 70 分进入现实，再用反馈把它磨到 90 分。完美不是唯一入口。",
+        strengths:["能够看见复杂系统的结构","长期计划与独立推进能力强","判断稳定，不易被情绪带偏"],
+        risks:["可能过度优化而延迟行动","对低质量沟通容忍度低","容易把真实需要隐藏在理性之后"]
+      },
+      DBTC: {
+        name:"林间修复师",
+        subtitle:"你不是喧闹的火焰，而是一盏一直亮着的灯。",
+        summary:"你安静、务实、温和，也非常重视稳定关系与真实责任。你常通过具体行动表达关心：记住细节、按时出现、把事情处理妥当。你的价值不一定第一眼最显眼，却经常是团队和关系最离不开的部分。",
+        keywords:["稳定照顾","细节可靠","低调耐心","现实温柔"],
+        social:"你更喜欢熟悉、真诚、节奏稳定的互动。不要因为不想麻烦别人，就把所有负担都自己留下。",
+        work:"适合档案、编辑、护理、行政、财务、质量管理和长期服务型工作。",
+        growth:"练习明确表达边界。真正稳定的关系，不需要你一直牺牲自己来维持。",
+        strengths:["做事细致、有连续性","通过行动建立信任","能敏锐发现现实中的小问题"],
+        risks:["可能低估自己的贡献","不喜欢变化，容易被打乱节奏","压力常常积累到很晚才说"]
+      },
+      DBTR: {
+        name:"黑曜规划师",
+        subtitle:"你不制造噪音，你制造确定性。",
+        summary:"你内敛、务实、理性且有秩序感。你喜欢清晰规则、可靠信息和可验证结果，面对复杂任务时能够沉下去建立稳定结构。你的冷静常常是团队的安全底座，而不是距离感。",
+        keywords:["稳定判断","风险意识","秩序构建","深度专注"],
+        social:"你重承诺、重边界，也希望关系具有一致性。偶尔把关心说出来，别人会更容易读懂你。",
+        work:"适合工程、审计、数据、法务、行政、质量控制和精密规划。",
+        growth:"给变化保留一点合法席位。计划之外的东西不一定是威胁，也可能是新信息。",
+        strengths:["做事严谨，可靠度高","能够提前识别风险","专注于长期稳定与质量"],
+        risks:["容易把情绪视为干扰项","对突发变化压力较大","可能因为标准过高而显得难以接近"]
+      }
+    };
+
+    // =========================
+    // 3. 应用状态
+    // =========================
+    const STORAGE_KEY = "orbit16-progress-v1";
+    let currentIndex = 0;
+    let answers = Array(QUESTIONS.length).fill(null);
+    let latestResult = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    const screens = {
+      home: $("homeScreen"),
+      test: $("testScreen"),
+      loading: $("loadingScreen"),
+      result: $("resultScreen")
+    };
+
+    function showScreen(name) {
+      Object.values(screens).forEach(screen => screen.classList.remove("active"));
+      screens[name].classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentIndex, answers }));
+      updateResumeButton();
+    }
+
+    function loadProgress() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved || !Array.isArray(saved.answers) || saved.answers.length !== QUESTIONS.length) return false;
+        currentIndex = Math.max(0, Math.min(QUESTIONS.length - 1, Number(saved.currentIndex) || 0));
+        answers = saved.answers.map(v => Number.isInteger(v) ? v : null);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function clearProgress() {
+      localStorage.removeItem(STORAGE_KEY);
+      currentIndex = 0;
+      answers = Array(QUESTIONS.length).fill(null);
+      updateResumeButton();
+    }
+
+    function updateResumeButton() {
+      const hasSaved = localStorage.getItem(STORAGE_KEY);
+      $("resumeBtn").style.display = hasSaved ? "inline-block" : "none";
+    }
+
+    // =========================
+    // 4. 答题流程
+    // =========================
+    function startTest(useSaved = false) {
+      if (useSaved) loadProgress();
+      else clearProgress();
+
+      showScreen("test");
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const q = QUESTIONS[currentIndex];
+      const answeredCount = answers.filter(v => v !== null).length;
+      const percent = Math.round((answeredCount / QUESTIONS.length) * 100);
+
+      $("progressText").textContent = `第 ${currentIndex + 1} / ${QUESTIONS.length} 题`;
+      $("progressPercent").textContent = `${percent}%`;
+      $("progressFill").style.width = `${percent}%`;
+      $("questionKicker").textContent = `轨道校准 ${String(currentIndex + 1).padStart(2, "0")}`;
+      $("questionText").textContent = q.text;
+
+      const container = $("optionsContainer");
+      container.innerHTML = "";
+
+      OPTION_LABELS.forEach((label, index) => {
+        const score = index - 2;
+        const btn = document.createElement("button");
+        btn.className = "option" + (answers[currentIndex] === score ? " selected" : "");
+        btn.type = "button";
+        btn.innerHTML = `<span class="option-key">${index + 1}</span><span>${label}</span>`;
+        btn.addEventListener("click", () => selectAnswer(score));
+        container.appendChild(btn);
+      });
+
+      $("prevBtn").disabled = currentIndex === 0;
+      $("nextBtn").disabled = answers[currentIndex] === null;
+      $("nextBtn").textContent = currentIndex === QUESTIONS.length - 1 ? "生成我的星轨 →" : "下一题 →";
+    }
+
+    function selectAnswer(score) {
+      answers[currentIndex] = score;
+      saveProgress();
+      renderQuestion();
+
+      // 自动进入下一题，最后一题除外
+      if (currentIndex < QUESTIONS.length - 1) {
+        setTimeout(() => {
+          if (answers[currentIndex] !== null) {
+            currentIndex += 1;
+            saveProgress();
+            renderQuestion();
+          }
+        }, 260);
+      }
+    }
+
+    function goNext() {
+      if (answers[currentIndex] === null) return;
+
+      if (currentIndex < QUESTIONS.length - 1) {
+        currentIndex += 1;
+        saveProgress();
+        renderQuestion();
+      } else {
+        submitTest();
+      }
+    }
+
+    function goPrev() {
+      if (currentIndex > 0) {
+        currentIndex -= 1;
+        saveProgress();
+        renderQuestion();
+      }
+    }
+
+    // =========================
+    // 5. 评分与结果
+    // =========================
+    function calculateResult() {
+      const raw = { energy:0, rhythm:0, lens:0, compass:0 };
+      const limits = { energy:0, rhythm:0, lens:0, compass:0 };
+
+      QUESTIONS.forEach((q, index) => {
+        const answer = answers[index] ?? 0;
+        raw[q.axis] += answer * q.sign;
+        limits[q.axis] += 2;
+      });
+
+      const scores = {};
+      Object.keys(raw).forEach(axis => {
+        scores[axis] = Math.round(((raw[axis] + limits[axis]) / (limits[axis] * 2)) * 100);
+      });
+
+      let code = "";
+      Object.keys(AXES).forEach(axis => {
+        code += scores[axis] >= 50 ? AXES[axis].highCode : AXES[axis].lowCode;
+      });
+
+      const profile = PROFILES[code] || PROFILES.DBTR;
+      const hidden = detectHiddenType(scores);
+
+      return { code, scores, profile, hidden };
+    }
+
+    function detectHiddenType(scores) {
+      const neutralCount = answers.filter(v => v === 0).length;
+      const extremeCount = answers.filter(v => Math.abs(v) === 2).length;
+
+      if (neutralCount >= 12) {
+        return {
+          title:"隐藏轨道：量子叠加态",
+          text:"你拒绝被单一选项框住。不是没主见，而是你真的会根据情境切换运行模式。"
+        };
+      }
+      if (scores.rhythm >= 76 && scores.energy >= 62) {
+        return {
+          title:"隐藏轨道：截止线冲浪手",
+          text:"越接近最后时刻，你的反应速度越像打开了涡轮。请记得：刺激可以偶尔用，别把它当长期燃料。"
+        };
+      }
+      if (scores.energy <= 34 && scores.lens >= 68) {
+        return {
+          title:"隐藏轨道：深夜造梦台",
+          text:"白天安静接收世界，晚上在脑内重建宇宙。你的最佳灵感常常出现在别人已经准备睡觉的时候。"
+        };
+      }
+      if (scores.energy >= 70 && scores.compass >= 70) {
+        return {
+          title:"隐藏轨道：人群充电宝",
+          text:"你很容易让别人感觉被接住。不过真正的充电宝也需要插回电源，不要一直只给别人供电。"
+        };
+      }
+      if (extremeCount >= 20) {
+        return {
+          title:"隐藏轨道：极光放大器",
+          text:"你的偏好非常鲜明，喜欢与不喜欢都很有轮廓。坚定是优势，也记得给变化留一点入口。"
+        };
+      }
+      return {
+        title:"隐藏轨道：稳定观测中",
+        text:"你的四条维度相互配合得比较均衡，没有单一模式完全接管驾驶舱。"
+      };
+    }
+
+    function submitTest() {
+      if (answers.some(v => v === null)) {
+        showToast("还有题目没有完成");
+        return;
+      }
+
+      latestResult = calculateResult();
+      showScreen("loading");
+
+      const loadingTexts = [
+        "读取你的社交电量……",
+        "检查你对计划表的真实态度……",
+        "扫描脑内正在同时运行的窗口……",
+        "判断你是冷静，还是懒得解释……",
+        "正在把性格碎片拼成一条轨道……"
+      ];
+
+      let i = 0;
+      $("loadingText").textContent = loadingTexts[0];
+      const timer = setInterval(() => {
+        i = (i + 1) % loadingTexts.length;
+        $("loadingText").textContent = loadingTexts[i];
+      }, 520);
+
+      setTimeout(() => {
+        clearInterval(timer);
+        renderResult(latestResult);
+        clearProgress();
+        showScreen("result");
+      }, 2300);
+    }
+
+    function renderResult(result) {
+      const { code, scores, profile, hidden } = result;
+
+      $("typeCode").innerHTML = code.split("").map(char => `<span class="code-char">${char}</span>`).join("");
+      $("typeName").textContent = profile.name;
+      $("typeSubtitle").textContent = profile.subtitle;
+      $("typeSummary").textContent = profile.summary;
+
+      $("keywords").innerHTML = profile.keywords
+        .map(word => `<span class="keyword"># ${word}</span>`)
+        .join("");
+
+      $("eggTitle").textContent = hidden.title;
+      $("eggText").textContent = hidden.text;
+
+      $("socialText").textContent = profile.social;
+      $("workText").textContent = profile.work;
+      $("growthText").textContent = profile.growth;
+
+      $("strengthList").innerHTML = profile.strengths
+        .map((item, i) => `<div class="list-item"><b>${i + 1}</b><span>${item}</span></div>`)
+        .join("");
+
+      $("riskList").innerHTML = profile.risks
+        .map((item, i) => `<div class="list-item"><b>${i + 1}</b><span>${item}</span></div>`)
+        .join("");
+
+      renderDimensions(scores);
+      drawRadar(scores);
+    }
+
+    function renderDimensions(scores) {
+      const container = $("dimensionList");
+      container.innerHTML = "";
+
+      Object.entries(AXES).forEach(([axis, config]) => {
+        const score = scores[axis];
+        const dominant = score >= 50 ? config.highLabel : config.lowLabel;
+        const item = document.createElement("div");
+        item.innerHTML = `
+          <div class="dimension-head">
+            <span>${config.name}</span>
+            <span>${dominant} ${Math.max(score, 100 - score)}%</span>
+          </div>
+          <div class="dimension-track">
+            <div class="dimension-bar" style="width:${score}%"></div>
+          </div>
+          <div class="dimension-poles">
+            <span>${config.lowLabel}</span>
+            <span>${config.highLabel}</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function drawRadar(scores) {
+      const canvas = $("radarCanvas");
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+      const cx = width / 2;
+      const cy = height / 2 + 6;
+      const radius = 108;
+      const values = [scores.energy, scores.rhythm, scores.lens, scores.compass];
+      const labels = ["能量场", "行动节奏", "观察镜头", "内在罗盘"];
+
+      ctx.clearRect(0, 0, width, height);
+
+      // 网格
+      ctx.strokeStyle = "rgba(255,255,255,.13)";
+      ctx.lineWidth = 1;
+      for (let level = 1; level <= 4; level++) {
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const angle = -Math.PI / 2 + i * Math.PI / 2;
+          const r = radius * (level / 4);
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
         }
+        ctx.closePath();
+        ctx.stroke();
+      }
 
-        function updateWeather() {
-            document.getElementById('weatherDisplay').innerText = getRandomItem(weathers);
-        }
+      // 轴线与标签
+      ctx.font = '13px "Microsoft YaHei", sans-serif';
+      ctx.fillStyle = "#a8b0cd";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-        function pickFood() {
-            const display = document.getElementById('foodDisplay');
-            display.innerText = "抽取中...";
-            setTimeout(() => {
-                display.innerText = "✨ " + getRandomItem(foods) + " ✨";
-            }, 300); // 加一点点延迟产生盲盒感
-        }
+      for (let i = 0; i < 4; i++) {
+        const angle = -Math.PI / 2 + i * Math.PI / 2;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
 
-        function setMood(msg) {
-            document.getElementById('moodDisplay').innerText = msg;
-        }
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
 
-        // 页面加载时自动执行
-        window.onload = function() {
-            updateWeather();
-            document.getElementById('quoteDisplay').innerText = getRandomItem(quotes);
+        const labelX = cx + Math.cos(angle) * (radius + 30);
+        const labelY = cy + Math.sin(angle) * (radius + 24);
+        ctx.fillText(labels[i], labelX, labelY);
+      }
+
+      // 数据面
+      const gradient = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+      gradient.addColorStop(0, "rgba(139,92,246,.72)");
+      gradient.addColorStop(.55, "rgba(34,211,238,.56)");
+      gradient.addColorStop(1, "rgba(251,113,133,.62)");
+
+      ctx.beginPath();
+      values.forEach((value, i) => {
+        const angle = -Math.PI / 2 + i * Math.PI / 2;
+        // 0-100 转成 20%-100% 半径，避免极低值完全缩到中心
+        const scaled = .2 + (value / 100) * .8;
+        const x = cx + Math.cos(angle) * radius * scaled;
+        const y = cy + Math.sin(angle) * radius * scaled;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.82)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 节点
+      values.forEach((value, i) => {
+        const angle = -Math.PI / 2 + i * Math.PI / 2;
+        const scaled = .2 + (value / 100) * .8;
+        const x = cx + Math.cos(angle) * radius * scaled;
+        const y = cy + Math.sin(angle) * radius * scaled;
+        ctx.beginPath();
+        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+      });
+    }
+
+    // =========================
+    // 6. 结果海报
+    // =========================
+    function downloadPoster() {
+      if (!latestResult) return;
+
+      const { code, scores, profile, hidden } = latestResult;
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1440;
+      const ctx = canvas.getContext("2d");
+
+      // 背景
+      const bg = ctx.createLinearGradient(0, 0, 1080, 1440);
+      bg.addColorStop(0, "#090d20");
+      bg.addColorStop(.48, "#19133c");
+      bg.addColorStop(1, "#071523");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, 1080, 1440);
+
+      // 光晕
+      const glow1 = ctx.createRadialGradient(160, 170, 0, 160, 170, 380);
+      glow1.addColorStop(0, "rgba(139,92,246,.38)");
+      glow1.addColorStop(1, "rgba(139,92,246,0)");
+      ctx.fillStyle = glow1;
+      ctx.fillRect(0, 0, 600, 600);
+
+      const glow2 = ctx.createRadialGradient(920, 380, 0, 920, 380, 330);
+      glow2.addColorStop(0, "rgba(34,211,238,.23)");
+      glow2.addColorStop(1, "rgba(34,211,238,0)");
+      ctx.fillStyle = glow2;
+      ctx.fillRect(550, 0, 530, 800);
+
+      // 标题
+      ctx.fillStyle = "#cfd5f5";
+      ctx.font = '700 28px "Microsoft YaHei", sans-serif';
+      ctx.fillText("星轨人格 ORBIT-16", 74, 92);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = '900 84px "Microsoft YaHei", sans-serif';
+      ctx.fillText(profile.name, 74, 230);
+
+      ctx.fillStyle = "#c4b5fd";
+      ctx.font = '600 32px "Microsoft YaHei", sans-serif';
+      wrapText(ctx, profile.subtitle, 74, 292, 920, 48);
+
+      // 代码方块
+      code.split("").forEach((char, i) => {
+        const x = 74 + i * 122;
+        const g = ctx.createLinearGradient(x, 0, x + 96, 0);
+        g.addColorStop(0, "#8b5cf6");
+        g.addColorStop(1, "#22d3ee");
+        ctx.fillStyle = g;
+        roundedRect(ctx, x, 390, 96, 96, 24);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = '900 46px Arial, sans-serif';
+        ctx.textAlign = "center";
+        ctx.fillText(char, x + 48, 453);
+      });
+      ctx.textAlign = "left";
+
+      // 描述
+      ctx.fillStyle = "#d7dcef";
+      ctx.font = '400 29px "Microsoft YaHei", sans-serif';
+      wrapText(ctx, profile.summary, 74, 560, 920, 46, 6);
+
+      // 四维分数
+      let y = 870;
+      Object.entries(AXES).forEach(([axis, config], index) => {
+        const score = scores[axis];
+        const dominant = score >= 50 ? config.highLabel : config.lowLabel;
+
+        ctx.fillStyle = "#fff";
+        ctx.font = '700 26px "Microsoft YaHei", sans-serif';
+        ctx.fillText(`${config.name} · ${dominant}`, 74, y);
+
+        ctx.fillStyle = "rgba(255,255,255,.10)";
+        roundedRect(ctx, 74, y + 24, 780, 18, 9);
+        ctx.fill();
+
+        const bar = ctx.createLinearGradient(74, 0, 854, 0);
+        bar.addColorStop(0, "#8b5cf6");
+        bar.addColorStop(1, "#22d3ee");
+        ctx.fillStyle = bar;
+        roundedRect(ctx, 74, y + 24, 780 * (score / 100), 18, 9);
+        ctx.fill();
+
+        ctx.fillStyle = "#c4b5fd";
+        ctx.font = '800 26px Arial, sans-serif';
+        ctx.fillText(`${Math.max(score, 100 - score)}%`, 888, y + 39);
+
+        y += 96;
+      });
+
+      // 彩蛋
+      ctx.fillStyle = "rgba(250,204,21,.12)";
+      roundedRect(ctx, 62, 1245, 956, 112, 26);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(250,204,21,.32)";
+      ctx.stroke();
+
+      ctx.fillStyle = "#fde68a";
+      ctx.font = '700 25px "Microsoft YaHei", sans-serif';
+      ctx.fillText(hidden.title, 88, 1291);
+
+      ctx.fillStyle = "#e5dfc7";
+      ctx.font = '400 22px "Microsoft YaHei", sans-serif';
+      wrapText(ctx, hidden.text, 88, 1330, 880, 34, 2);
+
+      ctx.fillStyle = "#949dbd";
+      ctx.font = '400 20px "Microsoft YaHei", sans-serif';
+      ctx.fillText("娱乐测试 · 不是心理诊断 · 你的轨道可以继续变化", 74, 1402);
+
+      const link = document.createElement("a");
+      link.download = `星轨人格-${code}-${profile.name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("结果海报已生成");
+    }
+
+    function roundedRect(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
+      const chars = [...text];
+      let line = "";
+      let lineCount = 0;
+
+      for (let i = 0; i < chars.length; i++) {
+        const testLine = line + chars[i];
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+          ctx.fillText(line, x, y + lineCount * lineHeight);
+          line = chars[i];
+          lineCount++;
+          if (lineCount >= maxLines) return;
+        } else {
+          line = testLine;
         }
-    </script>
+      }
+      if (lineCount < maxLines) ctx.fillText(line, x, y + lineCount * lineHeight);
+    }
+
+    async function copyShareText() {
+      if (!latestResult) return;
+
+      const { code, profile, hidden } = latestResult;
+      const text = `我的星轨人格是【${code} · ${profile.name}】\n${profile.subtitle}\n${hidden.title}\n来测测你是哪条轨道吧！`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("分享文案已复制");
+      } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        showToast("分享文案已复制");
+      }
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    function restart() {
+      clearProgress();
+      latestResult = null;
+      showScreen("home");
+    }
+
+    // =========================
+    // 7. 事件绑定
+    // =========================
+    $("startBtn").addEventListener("click", () => startTest(false));
+    $("resumeBtn").addEventListener("click", () => startTest(true));
+    $("prevBtn").addEventListener("click", goPrev);
+    $("nextBtn").addEventListener("click", goNext);
+    $("downloadBtn").addEventListener("click", downloadPoster);
+    $("copyBtn").addEventListener("click", copyShareText);
+    $("restartBtn").addEventListener("click", restart);
+    $("topRestartBtn").addEventListener("click", restart);
+
+    document.addEventListener("keydown", (event) => {
+      if (!screens.test.classList.contains("active")) return;
+      const n = Number(event.key);
+      if (n >= 1 && n <= 5) {
+        selectAnswer(n - 3);
+      }
+      if (event.key === "ArrowLeft") goPrev();
+      if (event.key === "ArrowRight" && answers[currentIndex] !== null) goNext();
+    });
+
+    updateResumeButton();
+  </script>
 </body>
 </html>
+'''
+
+path = Path("/mnt/data/orbit16_personality_test.html")
+path.write_text(html, encoding="utf-8")
+print(f"Created: {path} ({path.stat().st_size} bytes)")
